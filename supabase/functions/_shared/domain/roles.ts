@@ -75,11 +75,7 @@ const MANAGER_PERMISSIONS: readonly Permission[] = [
   'report.export',
 ];
 
-const ADMIN_PERMISSIONS: readonly Permission[] = [
-  ...PERMISSIONS.filter((p) => p !== 'attendance.record'),
-  // Administrators oversee; they do not stand at the bus recording attendance.
-  // (They can still review and override, which is what oversight needs.)
-];
+const ADMIN_PERMISSIONS: readonly Permission[] = PERMISSIONS;
 
 export const ROLE_PERMISSIONS: Record<AppRole, readonly Permission[]> = {
   SUPER_ADMIN: PERMISSIONS,

@@ -28,6 +28,7 @@ describe('permission matrix', () => {
     expect(can('ADMIN', 'manager.create')).toBe(true);
     expect(can('ADMIN', 'anomaly.review')).toBe(true);
     expect(can('ADMIN', 'org.settings.manage')).toBe(true);
+    expect(can('ADMIN', 'attendance.record')).toBe(true);
   });
 
   it('gives drivers no application permissions in V1', () => {
