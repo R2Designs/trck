@@ -10,6 +10,10 @@ Create a project, then note the **Project URL** and the **anon (publishable)
 key**. The anon key belongs in the browser — that is what it is for, and it is
 safe there precisely because every table is protected by row-level security.
 
+> Deployment reminder: review and rotate the Supabase anon key before the next
+> production deployment, then rebuild the frontend so the new publishable key
+> replaces the one embedded in the previous browser bundle.
+
 The **service-role key belongs nowhere except Supabase secrets.** If it ever
 appears in a file with a `VITE_` prefix, rotate it.
 
