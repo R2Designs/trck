@@ -56,7 +56,7 @@ test.describe('Manager journey', () => {
     await page.getByLabel(/name/i).fill(`E2E Route ${unique}`);
     await page.getByLabel(/code/i).fill(`R${unique}`);
     await page.getByLabel(/origin|from/i).fill('Yelahanka');
-    await page.getByLabel(/destination|to/i).fill('Majestic');
+    await page.getByLabel(/destination|to/i).fill('Tambaram');
     await page.getByLabel(/expected distance/i).fill('42');
     await page.getByRole('button', { name: /save|add|create/i }).click();
     await expect(page.getByText(`E2E Route ${unique}`)).toBeVisible();

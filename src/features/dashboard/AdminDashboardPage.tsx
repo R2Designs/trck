@@ -35,10 +35,12 @@ export default function AdminDashboardPage() {
   const totals = data?.totals;
 
   return (
-    <div className="space-y-8 md:space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold leading-tight tracking-tight">{t('admin.title')}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+    <div className="space-y-9 lg:space-y-11">
+      <header className="lg:pb-2">
+        <h1 className="text-3xl font-bold leading-tight tracking-[-0.025em] lg:text-4xl">
+          {t('admin.title')}
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground lg:text-base">
           {t('admin.subtitle', {
             organisation: identity.organizationName,
             date: formatLongDate(new Date()),
@@ -55,36 +57,41 @@ export default function AdminDashboardPage() {
             <SkeletonStatGrid count={5} />
           </div>
         ) : (
-          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-3 lg:grid-cols-5">
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 lg:gap-4">
             <StatCard
               label={t('admin.activeManagers')}
               value={totals?.managers ?? 0}
               icon={UserCog}
               to="/admin/managers"
+              className="lg:min-h-32 lg:p-5"
             />
             <StatCard
               label={t('admin.activeDrivers')}
               value={totals?.drivers ?? 0}
               icon={Users}
               to="/fleet/drivers"
+              className="lg:min-h-32 lg:p-5"
             />
             <StatCard
               label={t('admin.activeBuses')}
               value={totals?.buses ?? 0}
               icon={Bus}
               to="/fleet/buses"
+              className="lg:min-h-32 lg:p-5"
             />
             <StatCard
               label={t('admin.depots')}
               value={totals?.depots ?? 0}
               icon={Building2}
               to="/admin/depots"
+              className="lg:min-h-32 lg:p-5"
             />
             <StatCard
               label={t('admin.routes')}
               value={totals?.routes ?? 0}
               icon={RouteIcon}
               to="/fleet/routes"
+              className="lg:min-h-32 lg:p-5"
             />
           </div>
         )}
@@ -92,7 +99,7 @@ export default function AdminDashboardPage() {
 
       <section>
         <SectionHeading title={t('home.quickActions')} />
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:mt-2 sm:grid-cols-3 sm:gap-2">
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:gap-4">
           <AdminAction to="/attendance/take" icon={ScanFace} label={t('home.takeAttendance')} />
           <AdminAction to="/trips/start" icon={Play} label={t('home.startTrip')} />
           <AdminAction to="/trips" icon={Square} label={t('home.endTrip')} />
@@ -107,7 +114,7 @@ export default function AdminDashboardPage() {
             <SkeletonStatGrid count={2} />
           </div>
         ) : (
-          <div className="mt-3 grid grid-cols-1 gap-4 sm:mt-2 sm:grid-cols-2 sm:gap-3">
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:gap-4">
             <StatCard
               label={t('admin.attendanceRate')}
               value={
@@ -115,6 +122,7 @@ export default function AdminDashboardPage() {
                   ? formatPercent(data.attendance_rate_today, { decimals: 0 })
                   : '—'
               }
+              className="lg:min-h-36 lg:p-6"
               icon={Users}
               to="/attendance"
               tone={
@@ -129,16 +137,17 @@ export default function AdminDashboardPage() {
               sublabel={t('home.tripsCompleted') + `: ${totals?.trips_completed_today ?? 0}`}
               icon={RouteIcon}
               to="/trips"
+              className="lg:min-h-36 lg:p-6"
             />
           </div>
         )}
       </section>
 
-      <div className="grid items-start gap-8 md:gap-6 lg:grid-cols-[minmax(20rem,0.75fr)_minmax(0,1.25fr)]">
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(22rem,0.72fr)_minmax(0,1.28fr)] lg:gap-6">
         <section>
           <SectionHeading title={t('admin.fleetAvailability')} />
-          <Card className="mt-3 sm:mt-2">
-            <CardContent className="grid grid-cols-2 gap-x-5 gap-y-6 pt-5 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+          <Card className="mt-3">
+            <CardContent className="grid grid-cols-2 gap-x-6 gap-y-8 p-5 sm:grid-cols-4 sm:p-6 lg:grid-cols-2 lg:p-7 xl:grid-cols-4">
               {(['AVAILABLE', 'ON_TRIP', 'MAINTENANCE', 'OUT_OF_SERVICE'] as const).map(
                 (status) => (
                   <div key={status}>
@@ -160,7 +169,6 @@ export default function AdminDashboardPage() {
           data={data?.series.distance ?? []}
           kind="bar"
           unitSuffix={t('units.km')}
-          compact
         />
       </div>
     </div>
@@ -173,7 +181,7 @@ function AdminAction({ to, icon: Icon, label }: { to: string; icon: typeof Play;
       asChild
       variant="outline"
       size="lg"
-      className="min-h-14 justify-start gap-3 px-4 sm:min-h-touch"
+      className="min-h-14 justify-start gap-3 px-4 lg:min-h-16 lg:px-5"
     >
       <Link to={to}>
         <Icon className="size-5" aria-hidden />

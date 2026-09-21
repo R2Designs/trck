@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import {
   Activity,
-  Bus,
   CalendarCheck,
   CheckCircle2,
   ChevronRight,
@@ -19,7 +18,7 @@ import {
 import { SectionHeading, Card, CardContent } from '@/components/ui/card';
 import { StatCard } from '@/components/common/StatCard';
 import { EntityCard } from '@/components/common/EntityCard';
-import { AnomalyBadge, Badge, TripStatusBadge } from '@/components/common/StatusBadge';
+import { Badge, TripStatusBadge } from '@/components/common/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { SkeletonList, SkeletonStatGrid } from '@/components/ui/skeleton';
 import { ErrorState, NoDepotState } from '@/components/feedback/states';
@@ -27,12 +26,10 @@ import {
   formatDistance,
   formatEfficiency,
   formatRelativeTime,
-  greetingKey,
   formatLongDate,
 } from '@/lib/format';
 import { useActiveDepot, useAuth, useIdentity } from '@/features/auth/session';
 import { useManagerDashboard } from './api';
-import { useAnomalyExplanation } from '@/features/anomalies/explain';
 
 /**
  * The manager's day.
@@ -47,7 +44,6 @@ export default function ManagerHomePage() {
   const identity = useIdentity();
   const { can } = useAuth();
   const depot = useActiveDepot();
-  const explain = useAnomalyExplanation();
 
   const { data, isLoading, isError, error, refetch } = useManagerDashboard(depot?.id ?? null);
 
@@ -55,15 +51,14 @@ export default function ManagerHomePage() {
 
   const firstName = identity.profile.full_name.split(' ')[0] ?? identity.profile.full_name;
   const today = data?.today;
-  const fleet = data?.fleet ?? {};
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold leading-tight tracking-tight">
-          {t(`home.greeting${greetingKey()}`, { name: firstName })}
+    <div className="space-y-9 lg:space-y-11">
+      <header className="lg:pb-2">
+        <h1 className="text-3xl font-bold leading-tight tracking-[-0.025em] lg:text-4xl">
+          {t('home.greeting', { name: firstName })}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-2 text-sm text-muted-foreground lg:text-base">
           {t('home.depotLine', { depot: depot.name, date: formatLongDate(new Date()) })}
         </p>
       </header>
@@ -71,7 +66,7 @@ export default function ManagerHomePage() {
       {/* --- Quick actions --------------------------------------------- */}
       <section>
         <SectionHeading title={t('home.quickActions')} />
-        <div className="mt-2 grid grid-cols-2 gap-3">
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
           {can('attendance.record') && (
             <QuickAction
               to="/attendance/take"
@@ -102,7 +97,7 @@ export default function ManagerHomePage() {
             <SkeletonStatGrid count={4} />
           </div>
         ) : (
-          <div className="mt-2 grid grid-cols-2 gap-3">
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               label={t('home.driversPresent')}
               value={`${today?.drivers_present ?? 0}/${today?.drivers_total ?? 0}`}
@@ -122,7 +117,7 @@ export default function ManagerHomePage() {
             <StatCard
               label={t('home.busesActive')}
               value={today?.trips_active ?? 0}
-              icon={Bus}
+              icon={RouteIcon}
               to="/trips"
               tone="info"
             />
@@ -143,80 +138,43 @@ export default function ManagerHomePage() {
         )}
       </section>
 
-      {/* --- Fleet status ------------------------------------------------ */}
-      <section>
-        <SectionHeading
-          title={t('home.fleetStatus')}
-          action={
-            <Link to="/fleet/buses" className="text-sm font-semibold text-primary hover:underline">
-              {t('actions.viewAll')}
-            </Link>
-          }
-        />
-        <Card className="mt-2">
-          <CardContent className="grid grid-cols-2 gap-3 pt-4 sm:grid-cols-4">
-            {(['AVAILABLE', 'ON_TRIP', 'MAINTENANCE', 'OUT_OF_SERVICE'] as const).map((status) => (
-              <div key={status}>
-                <p className="tabular text-2xl font-bold leading-none">{fleet[status] ?? 0}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{t(`status.bus.${status}`)}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* --- Needs attention --------------------------------------------- */}
-      <section>
-        <SectionHeading
-          title={t('home.attentionRequired')}
-          action={
-            (data?.attention.length ?? 0) > 0 && (
-              <Link to="/alerts" className="text-sm font-semibold text-primary hover:underline">
+      {/* --- Attendance -------------------------------------------------- */}
+      {today && today.drivers_total > 0 && (
+        <section>
+          <SectionHeading
+            title={t('home.attendanceHeading')}
+            action={
+              <Link to="/attendance" className="text-sm font-semibold text-primary hover:underline">
                 {t('actions.viewAll')}
               </Link>
-            )
-          }
-        />
-        {isLoading ? (
-          <SkeletonList count={2} className="mt-2" />
-        ) : (data?.attention.length ?? 0) === 0 ? (
-          <Card className="mt-2">
-            <CardContent className="flex items-center gap-2.5 pt-4 text-sm text-muted-foreground">
-              <CheckCircle2 className="size-5 text-success" aria-hidden />
-              {t('home.attentionEmpty')}
+            }
+          />
+          <Card className="mt-3">
+            <CardContent className="p-5 sm:p-6 lg:p-7">
+              <p className="text-base font-semibold lg:text-lg">
+                {t('home.attendanceSummary', {
+                  present: today.drivers_present,
+                  total: today.drivers_total,
+                })}
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                <Badge tone="success" icon={CheckCircle2} size="sm">
+                  {t('home.presentList')}: {today.drivers_present}
+                </Badge>
+                <Badge tone="warning" icon={CalendarCheck} size="sm">
+                  {t('home.missingList')}:{' '}
+                  {Math.max(0, today.drivers_total - today.drivers_present)}
+                </Badge>
+                {today.drivers_manual > 0 && (
+                  <Badge tone="info" size="sm">
+                    {t('home.attendanceManual', { count: today.drivers_manual })}
+                  </Badge>
+                )}
+              </div>
             </CardContent>
           </Card>
-        ) : (
-          <ul className="mt-2 space-y-3">
-            {data?.attention.map((item) => (
-              <li key={item.id}>
-                <EntityCard
-                  to={`/alerts/${item.id}`}
-                  icon={TriangleAlert}
-                  title={t(`anomalies.kinds.${item.kind}`)}
-                  subtitle={explain({
-                    kind: item.kind,
-                    observedValue: item.observed_value,
-                    expectedValue: item.expected_value,
-                    variancePct: item.variance_pct,
-                    detail: item.detail,
-                  })}
-                  meta={
-                    <>
-                      <AnomalyBadge severity={item.severity} size="sm" />
-                      {item.bus && (
-                        <span className="text-xs font-medium text-muted-foreground">
-                          {item.bus.registration_number}
-                        </span>
-                      )}
-                    </>
-                  }
-                />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* --- Today's trips ------------------------------------------------ */}
       <section>
@@ -229,15 +187,15 @@ export default function ManagerHomePage() {
           }
         />
         {isLoading ? (
-          <SkeletonList count={3} className="mt-2" />
+          <SkeletonList count={3} className="mt-3" />
         ) : (data?.trips.length ?? 0) === 0 ? (
-          <Card className="mt-2">
-            <CardContent className="pt-4 text-sm text-muted-foreground">
+          <Card className="mt-3">
+            <CardContent className="p-5 text-sm text-muted-foreground sm:p-6">
               {t('trips.noActiveTrips')}
             </CardContent>
           </Card>
         ) : (
-          <ul className="mt-2 space-y-3">
+          <ul className="mt-3 space-y-4">
             {data?.trips.slice(0, 6).map((trip) => (
               <li key={trip.id}>
                 <EntityCard
@@ -279,7 +237,7 @@ export default function ManagerHomePage() {
             <SkeletonStatGrid count={2} />
           </div>
         ) : (
-          <div className="mt-2 grid grid-cols-2 gap-3">
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               label={t('home.distanceTravelled')}
               value={t('units.kmValue', {
@@ -317,8 +275,8 @@ export default function ManagerHomePage() {
       {(data?.recent_activity.length ?? 0) > 0 && (
         <section>
           <SectionHeading title={t('home.recentActivity')} />
-          <Card className="mt-2">
-            <CardContent className="divide-y divide-border pt-2">
+          <Card className="mt-3">
+            <CardContent className="divide-y divide-border p-5 sm:p-6">
               {data?.recent_activity.slice(0, 8).map((entry) => (
                 <div key={entry.id} className="flex items-start gap-2.5 py-2.5">
                   <Activity className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -340,43 +298,6 @@ export default function ManagerHomePage() {
         </section>
       )}
 
-      {/* Attendance summary line, for the "18 / 21" framing the brief asked for */}
-      {today && today.drivers_total > 0 && (
-        <section>
-          <SectionHeading
-            title={t('home.attendanceHeading')}
-            action={
-              <Link to="/attendance" className="text-sm font-semibold text-primary hover:underline">
-                {t('actions.viewAll')}
-              </Link>
-            }
-          />
-          <Card className="mt-2">
-            <CardContent className="pt-4">
-              <p className="text-sm font-medium">
-                {t('home.attendanceSummary', {
-                  present: today.drivers_present,
-                  total: today.drivers_total,
-                })}
-              </p>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Badge tone="success" icon={CheckCircle2} size="sm">
-                  {t('home.presentList')}: {today.drivers_present}
-                </Badge>
-                <Badge tone="warning" icon={CalendarCheck} size="sm">
-                  {t('home.missingList')}:{' '}
-                  {Math.max(0, today.drivers_total - today.drivers_present)}
-                </Badge>
-                {today.drivers_manual > 0 && (
-                  <Badge tone="info" size="sm">
-                    {t('home.attendanceManual', { count: today.drivers_manual })}
-                  </Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-      )}
     </div>
   );
 }
@@ -397,14 +318,12 @@ function QuickAction({
       asChild
       variant={primary ? 'primary' : 'outline'}
       size="lg"
-      className="h-auto min-h-[4.5rem] flex-col items-start justify-between gap-2 px-4 py-3 text-left"
+      className="min-h-14 justify-start gap-3 px-4 text-left lg:min-h-16 lg:px-5"
     >
       <Link to={to}>
         <Icon className="size-5 shrink-0" aria-hidden />
-        <span className="flex w-full items-center justify-between gap-1">
-          <span className="line-clamp-2 text-sm font-semibold leading-tight">{label}</span>
-          <ChevronRight className="size-4 shrink-0 opacity-60" aria-hidden />
-        </span>
+        <span className="flex-1 text-left text-sm font-semibold">{label}</span>
+        <ChevronRight className="size-4 shrink-0 opacity-60" aria-hidden />
       </Link>
     </Button>
   );

@@ -165,7 +165,7 @@ export default function BusFormPage() {
                 autoCapitalize="characters"
                 autoCorrect="off"
                 spellCheck={false}
-                placeholder="KA 01 AB 1234"
+                placeholder="TN 01 AB 1234"
                 invalid={Boolean(form.formState.errors.registration_number)}
               />
             )}

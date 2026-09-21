@@ -196,8 +196,8 @@ trip lifecycle invariants and face-candidate scoping.
 
 ## Seed
 
-`supabase/seed.sql` builds a realistic demo tenant: Sri Balaji Transport, two
-Bengaluru depots, one administrator and two managers, 12 employees, 8 buses,
+`supabase/seed.sql` builds a realistic demo tenant: Paranthaman Travels, two
+Chennai depots, one administrator and two managers, 12 employees, 8 buses,
 5 routes, 14 historical trips plus 4 notable ones, 4 anomalies across severities,
 notifications and computed baselines. It is enough to see every screen populated
 without touching real data.

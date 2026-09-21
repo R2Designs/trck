@@ -3,30 +3,30 @@
 -- ============================================================================
 -- A realistic single-tenant dataset for local development, E2E tests and demos.
 -- No lorem ipsum: every name, registration number and route is plausible for a
--- Bengaluru bus operator.
+-- Chennai bus operator.
 --
 -- Identifiers are FIXED so Playwright specs can address rows directly.
 --
 -- Demo sign-ins (change immediately outside local development):
 --   admin@trck.app          Admin@12345     ADMIN    — sees both depots
---   arun@trck.app           Manager@12345   MANAGER  — Bengaluru North
---   lakshmi@trck.app        Manager@12345   MANAGER  — Bengaluru South
+--   arun@trck.app           Manager@12345   MANAGER  — Chennai North
+--   lakshmi@trck.app        Manager@12345   MANAGER  — Chennai South
 -- ============================================================================
 
 set search_path = public, extensions;
 
 -- --- Organisation and depots -----------------------------------------------
 insert into public.organizations (id, name, slug, contact_email, timezone, default_locale)
-values ('11111111-1111-1111-1111-111111111111', 'Sri Balaji Transport', 'sri-balaji',
-        'ops@sribalajitransport.example', 'Asia/Kolkata', 'en')
+values ('11111111-1111-1111-1111-111111111111', 'Paranthaman Travels', 'paranthaman-travels',
+        'ops@paranthamantravels.example', 'Asia/Kolkata', 'en')
 on conflict (id) do nothing;
 
 insert into public.depots (id, organization_id, name, code, city, state, latitude, longitude)
 values
   ('21111111-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111',
-   'Bengaluru North Depot', 'BLR-N', 'Bengaluru', 'Karnataka', 13.028500, 77.570400),
+   'Chennai North Depot', 'MAA-N', 'Chennai', 'Tamil Nadu', 13.148200, 80.231400),
   ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111',
-   'Bengaluru South Depot', 'BLR-S', 'Bengaluru', 'Karnataka', 12.914200, 77.610100)
+   'Chennai South Depot', 'MAA-S', 'Chennai', 'Tamil Nadu', 12.924900, 80.100000)
 on conflict (id) do nothing;
 
 insert into public.app_settings (organization_id) values ('11111111-1111-1111-1111-111111111111')
@@ -121,35 +121,35 @@ insert into public.routes (id, organization_id, depot_id, name, code, origin, de
                            created_by)
 values
   ('31111111-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111',
-   '21111111-1111-1111-1111-111111111111', 'Majestic → Electronic City', 'BLR-N-01',
-   'Kempegowda Bus Station (Majestic)', 'Electronic City Phase 1', 27.50, 10, 75,
+   '21111111-1111-1111-1111-111111111111', 'Koyambedu → Tambaram', 'MAA-N-01',
+   'Koyambedu CMBT', 'Tambaram Bus Stand', 27.50, 10, 75,
    'a1111111-1111-1111-1111-111111111111'),
   ('32222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111',
-   '21111111-1111-1111-1111-111111111111', 'Yeshwanthpur → Whitefield', 'BLR-N-02',
-   'Yeshwanthpur TTMC', 'Whitefield ITPL', 32.80, 12, 95,
+   '21111111-1111-1111-1111-111111111111', 'Madhavaram → Sholinganallur', 'MAA-N-02',
+   'Madhavaram Mofussil Bus Terminus', 'Sholinganallur Junction', 32.80, 12, 95,
    'a1111111-1111-1111-1111-111111111111'),
   ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111',
-   '21111111-1111-1111-1111-111111111111', 'Hebbal → Kempegowda Airport', 'BLR-N-03',
-   'Hebbal Flyover', 'Kempegowda International Airport', 24.10, 8, 45,
+   '21111111-1111-1111-1111-111111111111', 'Chennai Central → Airport', 'MAA-N-03',
+   'Chennai Central', 'Chennai International Airport', 24.10, 8, 45,
    'a1111111-1111-1111-1111-111111111111'),
   ('34444444-4444-4444-4444-444444444444', '11111111-1111-1111-1111-111111111111',
-   '22222222-2222-2222-2222-222222222222', 'Jayanagar → Sarjapur', 'BLR-S-01',
-   'Jayanagar 4th Block', 'Sarjapur Road Junction', 18.60, 10, 55,
+   '22222222-2222-2222-2222-222222222222', 'Guindy → Kelambakkam', 'MAA-S-01',
+   'Guindy Bus Terminus', 'Kelambakkam Bus Station', 18.60, 10, 55,
    'a1111111-1111-1111-1111-111111111111'),
   ('35555555-5555-5555-5555-555555555555', '11111111-1111-1111-1111-111111111111',
-   '22222222-2222-2222-2222-222222222222', 'Banashankari → Hosur Circle', 'BLR-S-02',
-   'Banashankari TTMC', 'Hosur Road Circle', 21.40, 10, 60,
+   '22222222-2222-2222-2222-222222222222', 'Adyar → Siruseri', 'MAA-S-02',
+   'Adyar Depot', 'Siruseri SIPCOT', 21.40, 10, 60,
    'a1111111-1111-1111-1111-111111111111')
 on conflict (id) do nothing;
 
 insert into public.route_stops (organization_id, route_id, sequence_no, name, distance_from_origin_km)
 values
-  ('11111111-1111-1111-1111-111111111111', '31111111-1111-1111-1111-111111111111', 1, 'Corporation Circle', 3.20),
-  ('11111111-1111-1111-1111-111111111111', '31111111-1111-1111-1111-111111111111', 2, 'Madiwala', 14.60),
-  ('11111111-1111-1111-1111-111111111111', '31111111-1111-1111-1111-111111111111', 3, 'Silk Board', 18.90),
-  ('11111111-1111-1111-1111-111111111111', '32222222-2222-2222-2222-222222222222', 1, 'Mekhri Circle', 6.10),
-  ('11111111-1111-1111-1111-111111111111', '32222222-2222-2222-2222-222222222222', 2, 'Indiranagar', 19.40),
-  ('11111111-1111-1111-1111-111111111111', '34444444-4444-4444-4444-444444444444', 1, 'BTM Layout', 7.30)
+  ('11111111-1111-1111-1111-111111111111', '31111111-1111-1111-1111-111111111111', 1, 'Vadapalani', 3.20),
+  ('11111111-1111-1111-1111-111111111111', '31111111-1111-1111-1111-111111111111', 2, 'Guindy', 14.60),
+  ('11111111-1111-1111-1111-111111111111', '31111111-1111-1111-1111-111111111111', 3, 'Pallavaram', 18.90),
+  ('11111111-1111-1111-1111-111111111111', '32222222-2222-2222-2222-222222222222', 1, 'Perambur', 6.10),
+  ('11111111-1111-1111-1111-111111111111', '32222222-2222-2222-2222-222222222222', 2, 'Taramani', 19.40),
+  ('11111111-1111-1111-1111-111111111111', '34444444-4444-4444-4444-444444444444', 1, 'Thiruvanmiyur', 7.30)
 on conflict do nothing;
 
 -- --- Buses ------------------------------------------------------------------
@@ -159,28 +159,28 @@ insert into public.buses (id, organization_id, depot_id, registration_number, fl
                           starting_odometer_km, current_odometer_km, status, created_by)
 values
   ('41111111-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111',
-   '21111111-1111-1111-1111-111111111111', 'KA 01 AB 1234', 'N-01', 'Tata', 'Starbus Ultra', 2021,
+   '21111111-1111-1111-1111-111111111111', 'TN 01 AB 1234', 'N-01', 'Tata', 'Starbus Ultra', 2021,
    'DIESEL', 'DIGITAL', 160, 5.40, 5.20, 180000, 186420.5, 'AVAILABLE', 'a1111111-1111-1111-1111-111111111111'),
   ('42222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111',
-   '21111111-1111-1111-1111-111111111111', 'KA 01 AB 5678', 'N-02', 'Ashok Leyland', 'Viking', 2019,
+   '21111111-1111-1111-1111-111111111111', 'TN 01 AB 5678', 'N-02', 'Ashok Leyland', 'Viking', 2019,
    'DIESEL', 'SEGMENTED_LCD', 180, 4.90, 4.60, 240000, 251980.0, 'AVAILABLE', 'a1111111-1111-1111-1111-111111111111'),
   ('43333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111',
-   '21111111-1111-1111-1111-111111111111', 'KA 01 AC 9012', 'N-03', 'Tata', 'LP 909', 2022,
+   '21111111-1111-1111-1111-111111111111', 'TN 01 AC 9012', 'N-03', 'Tata', 'LP 909', 2022,
    'DIESEL', 'DIGITAL', 150, 5.80, 5.65, 60000, 64310.0, 'AVAILABLE', 'a1111111-1111-1111-1111-111111111111'),
   ('44444444-4444-4444-4444-444444444444', '11111111-1111-1111-1111-111111111111',
-   '21111111-1111-1111-1111-111111111111', 'KA 01 AD 3456', 'N-04', 'Eicher', 'Skyline Pro', 2020,
+   '21111111-1111-1111-1111-111111111111', 'TN 01 AD 3456', 'N-04', 'Eicher', 'Skyline Pro', 2020,
    'DIESEL', 'ANALOG', 140, 5.10, null, 120000, 128740.0, 'MAINTENANCE', 'a1111111-1111-1111-1111-111111111111'),
   ('45555555-5555-5555-5555-555555555555', '11111111-1111-1111-1111-111111111111',
-   '22222222-2222-2222-2222-222222222222', 'KA 05 BB 2211', 'S-01', 'Tata', 'Starbus Ultra', 2021,
+   '22222222-2222-2222-2222-222222222222', 'TN 07 BB 2211', 'S-01', 'Tata', 'Starbus Ultra', 2021,
    'DIESEL', 'DIGITAL', 160, 5.40, 5.35, 90000, 95120.0, 'AVAILABLE', 'a1111111-1111-1111-1111-111111111111'),
   ('46666666-6666-6666-6666-666666666666', '11111111-1111-1111-1111-111111111111',
-   '22222222-2222-2222-2222-222222222222', 'KA 05 BC 7788', 'S-02', 'Ashok Leyland', 'Oyster', 2018,
+   '22222222-2222-2222-2222-222222222222', 'TN 07 BC 7788', 'S-02', 'Ashok Leyland', 'Oyster', 2018,
    'CNG', 'MIXED', 120, 4.20, 4.05, 300000, 312450.0, 'AVAILABLE', 'a1111111-1111-1111-1111-111111111111'),
   ('47777777-7777-7777-7777-777777777777', '11111111-1111-1111-1111-111111111111',
-   '22222222-2222-2222-2222-222222222222', 'KA 05 BD 4455', 'S-03', 'Olectra', 'K9', 2023,
+   '22222222-2222-2222-2222-222222222222', 'TN 07 BD 4455', 'S-03', 'Olectra', 'K9', 2023,
    'ELECTRIC', 'DIGITAL', null, null, null, 15000, 18960.0, 'AVAILABLE', 'a1111111-1111-1111-1111-111111111111'),
   ('48888888-8888-8888-8888-888888888888', '11111111-1111-1111-1111-111111111111',
-   '22222222-2222-2222-2222-222222222222', 'KA 05 BE 6677', 'S-04', 'Tata', 'LP 909', 2017,
+   '22222222-2222-2222-2222-222222222222', 'TN 07 BE 6677', 'S-04', 'Tata', 'LP 909', 2017,
    'DIESEL', 'ANALOG', 150, 4.80, 4.40, 410000, 428300.0, 'OUT_OF_SERVICE', 'a1111111-1111-1111-1111-111111111111')
 on conflict (id) do nothing;
 
@@ -398,7 +398,7 @@ values
   ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222',
    'a3333333-3333-3333-3333-333333333333', 'HIGH_SEVERITY_ANOMALY', 'CRITICAL',
    'notifications.highSeverityAnomaly.title', 'notifications.highSeverityAnomaly.body',
-   '{"registrationNumber": "KA 05 BC 7788"}'::jsonb, 'trip',
+   '{"registrationNumber": "TN 07 BC 7788"}'::jsonb, 'trip',
    '64444444-4444-4444-4444-444444444444')
 on conflict do nothing;
 
