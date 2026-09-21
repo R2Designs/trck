@@ -115,7 +115,11 @@ export default function ThresholdsPage() {
 
   return (
     <form onSubmit={submit} noValidate className="space-y-4 pb-24">
-      <PageHeader title={t('settings.thresholds')} description={t('settings.thresholdsSubtitle')} />
+      <PageHeader
+        backTo="/settings"
+        title={t('settings.thresholds')}
+        description={t('settings.thresholdsSubtitle')}
+      />
 
       <div className="flex items-start gap-2.5 rounded-xl border border-info/40 bg-info-muted p-3">
         <Info className="mt-0.5 size-5 shrink-0 text-info" aria-hidden />

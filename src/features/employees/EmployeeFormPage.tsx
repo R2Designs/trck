@@ -125,6 +125,7 @@ export default function EmployeeFormPage() {
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4 pb-24">
       <PageHeader
+        backTo={isEditing && employeeId ? `/fleet/drivers/${employeeId}` : '/fleet/drivers'}
         title={isEditing ? t('employees.edit') : t('employees.addTitle')}
         description={isEditing ? undefined : t('employees.addSubtitle')}
       />

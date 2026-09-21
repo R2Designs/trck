@@ -13,6 +13,7 @@ const LANGUAGES = [
   { name: /தமிழ்|Tamil/i, script: /[஀-௿]/, code: 'ta' },
   { name: /తెలుగు|Telugu/i, script: /[ఀ-౿]/, code: 'te' },
   { name: /ಕನ್ನಡ|Kannada/i, script: /[ಀ-೿]/, code: 'kn' },
+  { name: /हिन्दी|Hindi/i, script: /[ऀ-ॿ]/, code: 'hi' },
 ] as const;
 
 test.describe('Languages', () => {
@@ -57,6 +58,6 @@ test.describe('Languages', () => {
     await signIn(page, 'northManager');
     await page.goto('/home');
     const lang = await page.locator('html').getAttribute('lang');
-    expect(lang).toMatch(/^(en|ta|te|kn)$/);
+    expect(lang).toMatch(/^(en|ta|te|kn|hi)$/);
   });
 });

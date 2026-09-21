@@ -145,6 +145,7 @@ export default function BusFormPage() {
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4 pb-24">
       <PageHeader
+        backTo={isEditing && busId ? `/fleet/buses/${busId}` : '/fleet/buses'}
         title={isEditing ? t('actions.edit') : t('buses.addTitle')}
         description={isEditing ? undefined : t('buses.addSubtitle')}
       />

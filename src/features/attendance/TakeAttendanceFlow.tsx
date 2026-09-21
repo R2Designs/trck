@@ -106,6 +106,25 @@ export default function TakeAttendanceFlow() {
   );
 
   const close = () => navigate('/attendance');
+  const goBack = () => {
+    switch (stage.name) {
+      case 'route':
+      case 'done':
+        close();
+        break;
+      case 'bus':
+        setStage({ name: 'route' });
+        break;
+      case 'scan':
+        setStage({ name: 'bus' });
+        break;
+      case 'match':
+      case 'failure':
+      case 'manual':
+        setStage({ name: 'scan' });
+        break;
+    }
+  };
 
   const submit = async (params: {
     employeeId: string;
@@ -221,7 +240,7 @@ export default function TakeAttendanceFlow() {
   );
 
   return (
-    <FlowShell title={t('attendance.title')} subtitle={depot.name} onClose={close}>
+    <FlowShell title={t('attendance.title')} subtitle={depot.name} onClose={goBack}>
       {stage.name !== 'done' && <StepProgress current={stepNumber(stage)} total={TOTAL_STEPS} />}
       {stage.name !== 'done' && answered}
 

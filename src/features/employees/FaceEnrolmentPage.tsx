@@ -63,6 +63,21 @@ export default function FaceEnrolmentPage() {
   const [modelProgress, setModelProgress] = useState(0);
   const [modelReady, setModelReady] = useState(false);
 
+  const goBack = () => {
+    switch (stage) {
+      case 'consent':
+      case 'done':
+        navigate(-1);
+        break;
+      case 'guidance':
+        setStage('consent');
+        break;
+      case 'capture':
+        setStage('guidance');
+        break;
+    }
+  };
+
   // Front camera with a positive exposure bias: enrolment is usually done in a
   // depot office, often with a window behind the subject.
   const camera = useCamera({ facing: 'user', autoStart: false, exposureBias: 0.7 });
@@ -180,7 +195,7 @@ export default function FaceEnrolmentPage() {
   };
 
   return (
-    <FlowShell title={t('face.enrolTitle')} subtitle={person.full_name} onClose={close}>
+    <FlowShell title={t('face.enrolTitle')} subtitle={person.full_name} onClose={goBack}>
       {/* --- Consent ---------------------------------------------------- */}
       {stage === 'consent' && (
         <div className="space-y-4">

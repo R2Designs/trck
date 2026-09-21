@@ -138,6 +138,7 @@ export default function AnomalyDetailPage() {
   return (
     <div className="space-y-4">
       <PageHeader
+        backTo="/alerts"
         title={t(`anomalies.kinds.${record.kind}`)}
         description={t('anomalies.details.detectedAt', {
           time: formatDateTime(record.detected_at),

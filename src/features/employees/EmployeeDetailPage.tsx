@@ -91,6 +91,7 @@ export default function EmployeeDetailPage() {
   return (
     <div className="space-y-4">
       <PageHeader
+        backTo="/fleet/drivers"
         title={person.full_name}
         description={`${person.employee_code} · ${t(`employeeType.${person.employee_type}`)}`}
         action={
@@ -436,22 +437,19 @@ function MonthlyAttendanceCalendar({
                   role="gridcell"
                   aria-label={`${formatDate(day)}${labels.length > 0 ? ` · ${labels.join(', ')}` : ''}`}
                   className={cn(
-                    'relative flex min-h-14 flex-col justify-between rounded-lg border p-1.5 sm:min-h-24 sm:p-3',
-                    !inMonth && 'border-transparent opacity-30',
-                    inMonth && !hasFace && !hasManual && 'border-border bg-background',
-                    inMonth && hasFace && !hasManual && 'border-success/40 bg-success-muted/45',
-                    inMonth && hasManual && !hasFace && 'border-warning/50 bg-warning-muted/45',
-                    inMonth &&
-                      hasFace &&
-                      hasManual &&
-                      'border-primary/35 bg-[linear-gradient(135deg,hsl(var(--success-muted))_0_50%,hsl(var(--warning-muted))_50%_100%)]',
-                    isToday(day) && 'ring-2 ring-primary ring-offset-2 ring-offset-card',
+                    'relative flex min-h-14 flex-col justify-between border-t border-border/60 p-1.5 sm:min-h-20 sm:p-3',
+                    !inMonth && 'opacity-25',
+                    inMonth && !hasFace && !hasManual && 'bg-transparent',
+                    inMonth && hasFace && !hasManual && 'rounded-lg bg-success-muted/45',
+                    inMonth && hasManual && !hasFace && 'rounded-lg bg-warning-muted/45',
+                    inMonth && hasFace && hasManual && 'rounded-lg bg-muted/70',
                   )}
                 >
                   <span
                     className={cn(
-                      'text-xs font-semibold sm:text-sm',
+                      'grid size-6 place-items-center rounded-full text-xs font-semibold sm:text-sm',
                       !inMonth && 'text-muted-foreground',
+                      isToday(day) && 'bg-primary text-primary-foreground',
                     )}
                   >
                     {format(day, 'd')}

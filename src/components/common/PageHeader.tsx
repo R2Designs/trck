@@ -1,4 +1,8 @@
 import { cn } from '@/lib/cn';
+import { ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
 
 /**
  * In-page heading.
@@ -11,13 +15,17 @@ export function PageHeader({
   title,
   description,
   action,
+  backTo,
   className,
 }: {
   title: string;
   description?: string;
   action?: React.ReactNode;
+  backTo?: string;
   className?: string;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div
       className={cn(
@@ -25,9 +33,24 @@ export function PageHeader({
         className,
       )}
     >
-      <div className="min-w-0">
-        <h1 className="text-xl font-bold leading-tight tracking-tight">{title}</h1>
-        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+      <div className="flex min-w-0 items-start gap-2">
+        {backTo && (
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className="-ml-2 -mt-2 shrink-0"
+            aria-label={t('actions.back')}
+          >
+            <Link to={backTo}>
+              <ArrowLeft className="size-5" aria-hidden />
+            </Link>
+          </Button>
+        )}
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold leading-tight tracking-tight">{title}</h1>
+          {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+        </div>
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>

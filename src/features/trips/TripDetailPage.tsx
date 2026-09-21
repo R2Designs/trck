@@ -80,6 +80,7 @@ export default function TripDetailPage() {
   return (
     <div className="space-y-4">
       <PageHeader
+        backTo="/trips"
         title={record.bus?.registration_number ?? t('trips.title')}
         description={record.route?.name ?? undefined}
         action={

@@ -108,6 +108,7 @@ export default function RouteFormPage() {
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4 pb-24">
       <PageHeader
+        backTo="/fleet/routes"
         title={isEditing ? t('actions.edit') : t('routes.addTitle')}
         description={isEditing ? undefined : t('routes.addSubtitle')}
       />

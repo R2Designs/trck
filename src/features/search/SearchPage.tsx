@@ -66,7 +66,7 @@ export default function SearchPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title={t('search.title')} />
+      <PageHeader backTo="/" title={t('search.title')} />
 
       <SearchInput
         value={query}

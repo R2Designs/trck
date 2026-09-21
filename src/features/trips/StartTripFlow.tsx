@@ -94,6 +94,28 @@ export default function StartTripFlow() {
   );
 
   const close = () => navigate('/trips');
+  const goBack = () => {
+    switch (stage.name) {
+      case 'bus':
+      case 'done':
+        close();
+        break;
+      case 'route':
+        setStage({ name: 'bus' });
+        break;
+      case 'driver':
+        setStage({ name: 'route' });
+        break;
+      case 'capture':
+        setStage({ name: 'driver' });
+        break;
+      case 'review':
+      case 'manual':
+        capture.reset();
+        setStage({ name: 'capture' });
+        break;
+    }
+  };
 
   const begin = async (readings: {
     odometer: number;
@@ -157,7 +179,7 @@ export default function StartTripFlow() {
     stage.name === 'bus' ? 1 : stage.name === 'route' ? 2 : stage.name === 'driver' ? 3 : 4;
 
   return (
-    <FlowShell title={t('trips.startTitle')} subtitle={depot.name} onClose={close}>
+    <FlowShell title={t('trips.startTitle')} subtitle={depot.name} onClose={goBack}>
       {stage.name !== 'done' && (
         <>
           <StepProgress current={step} total={TOTAL_STEPS} />

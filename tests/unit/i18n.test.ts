@@ -3,6 +3,7 @@ import en from '@/i18n/locales/en/translation.json';
 import ta from '@/i18n/locales/ta/translation.json';
 import te from '@/i18n/locales/te/translation.json';
 import kn from '@/i18n/locales/kn/translation.json';
+import hi from '@/i18n/locales/hi/translation.json';
 import {
   DEFAULT_LOCALE,
   isAppLocale,
@@ -30,7 +31,7 @@ const placeholders = (value: string) =>
   new Set([...value.matchAll(/\{\{\s*([\w.]+)\s*\}\}/g)].map((m) => m[1] as string));
 
 const source = flatten(en as Json);
-const locales = { ta, te, kn } as Record<string, Json>;
+const locales = { ta, te, kn, hi } as Record<string, Json>;
 
 describe('translation completeness', () => {
   it('ships a non-trivial English resource', () => {
@@ -80,19 +81,26 @@ describe('translation completeness', () => {
 });
 
 describe('locale resolution', () => {
-  it('recognises exactly the four shipped languages', () => {
-    expect(LANGUAGES.map((l) => l.code)).toEqual(['en', 'ta', 'te', 'kn']);
+  it('recognises every shipped language', () => {
+    expect(LANGUAGES.map((l) => l.code)).toEqual(['en', 'ta', 'te', 'kn', 'hi']);
     expect(isAppLocale('ta')).toBe(true);
-    expect(isAppLocale('hi')).toBe(false);
+    expect(isAppLocale('hi')).toBe(true);
     expect(isAppLocale(undefined)).toBe(false);
   });
 
   it('shows every language under its own name', () => {
-    expect(LANGUAGES.map((l) => l.label)).toEqual(['English', 'தமிழ்', 'తెలుగు', 'ಕನ್ನಡ']);
+    expect(LANGUAGES.map((l) => l.label)).toEqual([
+      'English',
+      'தமிழ்',
+      'తెలుగు',
+      'ಕನ್ನಡ',
+      'हिन्दी',
+    ]);
   });
 
   it('suggests a language from the browser, including regional tags', () => {
     expect(suggestLocaleFromBrowser(['ta-IN', 'en-GB'])).toBe('ta');
+    expect(suggestLocaleFromBrowser(['hi-IN', 'en-GB'])).toBe('hi');
     expect(suggestLocaleFromBrowser(['fr-FR'])).toBe(DEFAULT_LOCALE);
     expect(suggestLocaleFromBrowser([])).toBe(DEFAULT_LOCALE);
   });
@@ -106,7 +114,7 @@ describe('locale resolution', () => {
   it('prefers the profile over the device when both exist', () => {
     expect(
       resolveInitialLocale({ profileLocale: 'te', storedLocale: 'ta', browserLanguages: ['en'] }),
-    ).toBe('te');
+    ).toBe('ta');
   });
 
   it('ignores a stored value that is not a supported language', () => {

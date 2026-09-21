@@ -15,7 +15,7 @@ import { supabase } from '@/lib/supabase/client';
 import type { DepotRow, ProfileRow } from '@/lib/supabase/database.types';
 import { logger } from '@/lib/logger';
 import { handleError } from '@/lib/errors';
-import { changeLanguage } from '@/i18n';
+import { changeLanguage, readStoredLocale, resolveInitialLocale } from '@/i18n';
 
 /**
  * Session, identity and authorisation state.
@@ -170,11 +170,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIdentity(result.identity);
       setStatus('authenticated');
 
-      // The stored language wins over the browser, and the profile wins over
-      // the device — see src/i18n/languages.ts.
-      if (result.identity.profile.preferred_locale) {
-        await changeLanguage(result.identity.profile.preferred_locale);
-      }
+      // Keep the latest language chosen on this device. The profile remains a
+      // cross-device fallback when this browser has no saved choice.
+      await changeLanguage(
+        resolveInitialLocale({
+          storedLocale: readStoredLocale(),
+          profileLocale: result.identity.profile.preferred_locale,
+        }),
+      );
 
       const stored = (() => {
         try {

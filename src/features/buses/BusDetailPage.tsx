@@ -55,6 +55,7 @@ export default function BusDetailPage() {
   return (
     <div className="space-y-4">
       <PageHeader
+        backTo="/fleet/buses"
         title={record.registration_number}
         description={[record.fleet_number, record.make, record.model].filter(Boolean).join(' · ')}
         action={

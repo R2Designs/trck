@@ -19,7 +19,7 @@ export type AppRole = (typeof APP_ROLES)[number];
 export const ACCOUNT_STATUSES = ['ACTIVE', 'INACTIVE', 'INVITED'] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
 
-export const APP_LOCALES = ['en', 'ta', 'te', 'kn'] as const;
+export const APP_LOCALES = ['en', 'ta', 'te', 'kn', 'hi'] as const;
 export type AppLocale = (typeof APP_LOCALES)[number];
 
 export const EMPLOYEE_TYPES = ['DRIVER', 'CONDUCTOR', 'HELPER', 'OTHER'] as const;

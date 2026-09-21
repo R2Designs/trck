@@ -5,8 +5,7 @@
  * coverage, which shows up as tofu boxes or broken vowel signs. We self-host
  * Noto (SIL Open Font Licence) rather than trusting the device — but we only
  * fetch the subset the selected language actually needs, because each Indic
- * subset is ~60 KB and a manager who only ever uses English should never pay
- * for three of them.
+ * subset is ~60 KB and a manager should only download the script they use.
  *
  * Fontsource ships the @font-face rules as plain CSS, so a dynamic import is
  * all that is required; Vite turns each into its own lazily-loaded stylesheet.
@@ -40,6 +39,12 @@ async function loadScript(script: string): Promise<void> {
         await Promise.all([
           import('@fontsource/noto-sans-kannada/kannada-400.css'),
           import('@fontsource/noto-sans-kannada/kannada-600.css'),
+        ]);
+        break;
+      case 'devanagari':
+        await Promise.all([
+          import('@fontsource/noto-sans/devanagari-400.css'),
+          import('@fontsource/noto-sans/devanagari-600.css'),
         ]);
         break;
       default:

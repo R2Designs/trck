@@ -1,8 +1,8 @@
 /**
  * Translation parity check.
  *
- * Fails the build when a key that exists in English is missing from Tamil,
- * Telugu or Kannada — or when a translation drops an interpolation
+ * Fails the build when a key that exists in English is missing from a shipped
+ * translation — or when a translation drops an interpolation
  * placeholder, which produces a sentence with a hole in it at runtime.
  *
  *   npm run i18n:check
@@ -15,7 +15,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const localesDir = resolve(here, '../src/i18n/locales');
 
 const SOURCE = 'en';
-const TARGETS = ['ta', 'te', 'kn'] as const;
+const TARGETS = ['ta', 'te', 'kn', 'hi'] as const;
 
 type Json = { [key: string]: Json | string | number | boolean | null };
 

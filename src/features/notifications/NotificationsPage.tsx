@@ -50,6 +50,7 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
+        backTo="/"
         title={t('notifications.title')}
         action={
           unread.length > 0 && (

@@ -63,6 +63,20 @@ export default function EndTripFlow() {
   });
 
   const close = () => navigate(tripId ? `/trips/${tripId}` : '/trips');
+  const goBack = () => {
+    switch (stage.name) {
+      case 'capture':
+      case 'done':
+        close();
+        break;
+      case 'review':
+      case 'manual':
+      case 'override':
+        capture.reset();
+        setStage({ name: 'capture' });
+        break;
+    }
+  };
 
   const finish = async (params: {
     odometer: number | null;
@@ -155,7 +169,7 @@ export default function EndTripFlow() {
     <FlowShell
       title={t('trips.endTitle')}
       subtitle={record.bus?.registration_number}
-      onClose={close}
+      onClose={goBack}
     >
       {stage.name !== 'done' && (
         <>

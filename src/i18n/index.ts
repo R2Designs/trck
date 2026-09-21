@@ -3,7 +3,7 @@
  *
  * Design decisions worth knowing:
  *
- *  • **One namespace, four files.** Only the active language's resource is
+ *  • **One namespace, one file per language.** Only the active language's resource is
  *    fetched (dynamic `import`), so a Tamil user never downloads Kannada.
  *  • **English is the fallback.** A missing key renders the English sentence,
  *    never the raw key — a manager must never see `attendance.markPresent`.
@@ -29,9 +29,10 @@ const loaders: Record<AppLocale, () => Promise<{ default: Record<string, unknown
   ta: () => import('./locales/ta/translation.json'),
   te: () => import('./locales/te/translation.json'),
   kn: () => import('./locales/kn/translation.json'),
+  hi: () => import('./locales/hi/translation.json'),
 };
 
-function readStoredLocale(): string | null {
+export function readStoredLocale(): string | null {
   try {
     return localStorage.getItem(LOCALE_STORAGE_KEY);
   } catch {

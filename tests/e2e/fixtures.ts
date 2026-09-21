@@ -34,7 +34,7 @@ export async function signOut(page: Page): Promise<void> {
 /** Switches the interface language and waits for the change to take effect. */
 export async function setLanguage(page: Page, label: RegExp): Promise<void> {
   await page.goto('/settings');
-  await page.getByRole('combobox', { name: /language|மொழி|భాష|ಭಾಷೆ/i }).click();
+  await page.getByRole('combobox', { name: /language|மொழி|భాష|ಭಾಷೆ|भाषा/i }).click();
   await page.getByRole('option', { name: label }).click();
 }
 
