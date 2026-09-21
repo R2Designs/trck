@@ -25,7 +25,7 @@ export default function AdminDashboardPage() {
   const totals = data?.totals;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 md:space-y-6">
       <header>
         <h1 className="text-2xl font-bold leading-tight tracking-tight">{t('admin.title')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -40,7 +40,7 @@ export default function AdminDashboardPage() {
 
       <section className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <SectionHeading title={t('nav.overview')} />
-        <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-5">
+        <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:mt-3 sm:grid-cols-5">
           {[
             {
               label: t('admin.activeManagers'),
@@ -59,7 +59,7 @@ export default function AdminDashboardPage() {
             <Link
               key={metric.to}
               to={metric.to}
-              className="min-h-20 bg-card p-3 transition-colors hover:bg-muted/50"
+              className="min-h-24 bg-card p-4 transition-colors hover:bg-muted/50 sm:min-h-20 sm:p-3"
             >
               <span className="tabular block text-2xl font-bold leading-none">
                 {isLoading ? '—' : metric.value}
@@ -74,14 +74,14 @@ export default function AdminDashboardPage() {
 
       <section>
         <SectionHeading title={t('home.quickActions')} />
-        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:mt-2 sm:grid-cols-3 sm:gap-2">
           <AdminAction to="/attendance/take" icon={ScanFace} label={t('home.takeAttendance')} />
           <AdminAction to="/trips/start" icon={Play} label={t('home.startTrip')} />
           <AdminAction to="/trips" icon={Square} label={t('home.endTrip')} />
         </div>
       </section>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+      <div className="grid items-start gap-8 md:gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         {/* --- Today ----------------------------------------------------- */}
         <section>
           <SectionHeading title={t('common.today')} />
@@ -90,7 +90,7 @@ export default function AdminDashboardPage() {
               <SkeletonStatGrid count={2} />
             </div>
           ) : (
-            <div className="mt-2 grid grid-cols-2 gap-3 lg:grid-cols-1">
+            <div className="mt-3 grid grid-cols-1 gap-4 sm:mt-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-1">
               <StatCard
                 label={t('admin.attendanceRate')}
                 value={
@@ -130,7 +130,7 @@ export default function AdminDashboardPage() {
         <SectionHeading title={t('admin.fleetAvailability')} />
         <dl className="mt-2 divide-y divide-border/60 border-y border-border/60">
           {(['AVAILABLE', 'ON_TRIP', 'MAINTENANCE', 'OUT_OF_SERVICE'] as const).map((status) => (
-            <div key={status} className="flex items-center justify-between gap-4 py-2.5">
+            <div key={status} className="flex items-center justify-between gap-4 py-3.5 md:py-2.5">
               <dt className="text-sm text-muted-foreground">{t(`status.bus.${status}`)}</dt>
               <dd className="tabular text-sm font-semibold">
                 {data?.fleet_availability[status] ?? 0}
@@ -145,7 +145,12 @@ export default function AdminDashboardPage() {
 
 function AdminAction({ to, icon: Icon, label }: { to: string; icon: typeof Play; label: string }) {
   return (
-    <Button asChild variant="outline" size="lg" className="justify-start gap-3">
+    <Button
+      asChild
+      variant="outline"
+      size="lg"
+      className="min-h-14 justify-start gap-3 px-4 sm:min-h-touch"
+    >
       <Link to={to}>
         <Icon className="size-5" aria-hidden />
         <span className="flex-1 text-left">{label}</span>
