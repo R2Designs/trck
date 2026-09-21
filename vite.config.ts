@@ -11,7 +11,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       injectRegister: null,
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png', 'fonts/*.woff2'],
       manifest: {
@@ -46,6 +46,10 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Static deployments must not leave users on an older UI after a push.
+        // Activate the newly generated worker as soon as it is installed.
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         // Face/OCR model weights are large; never precache them.
         globIgnores: ['**/models/**', '**/*.wasm'],
