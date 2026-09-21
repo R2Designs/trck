@@ -1,16 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import {
-  Bus,
-  Building2,
-  CheckCircle2,
-  Gauge,
-  Route as RouteIcon,
-  TriangleAlert,
-  UserCog,
-  Users,
-} from 'lucide-react';
+import { CheckCircle2, Gauge, Route as RouteIcon, TriangleAlert, Users } from 'lucide-react';
 import { SectionHeading, Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatCard } from '@/components/common/StatCard';
 import { EntityCard } from '@/components/common/EntityCard';
@@ -115,69 +106,62 @@ export default function AdminDashboardPage() {
         )}
       </section>
 
-      {/* --- Fleet ------------------------------------------------------- */}
-      <section>
-        <SectionHeading title={t('admin.fleetAvailability')} />
-        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {(['AVAILABLE', 'ON_TRIP', 'MAINTENANCE', 'OUT_OF_SERVICE'] as const).map((status) => (
-            <div key={status} className="rounded-lg border border-border/70 bg-card/60 px-3 py-2.5">
-              <p className="tabular text-lg font-bold leading-none">
-                {data?.fleet_availability[status] ?? 0}
-              </p>
-              <p className="mt-1 text-[0.6875rem] text-muted-foreground">
-                {t(`status.bus.${status}`)}
-              </p>
-            </div>
-          ))}
+      {/* --- Secondary fleet context ------------------------------------- */}
+      <section className="space-y-3 rounded-xl border border-border/60 bg-card/30 p-3">
+        <div>
+          <SectionHeading title={t('admin.fleetAvailability')} />
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+            {(['AVAILABLE', 'ON_TRIP', 'MAINTENANCE', 'OUT_OF_SERVICE'] as const).map((status) => (
+              <div
+                key={status}
+                className="flex min-h-10 items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1.5"
+              >
+                <p className="tabular text-sm font-bold">{data?.fleet_availability[status] ?? 0}</p>
+                <p className="truncate text-[0.6875rem] text-muted-foreground">
+                  {t(`status.bus.${status}`)}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
-      </section>
 
-      {/* --- Organisation totals ------------------------------------------ */}
-      <section>
-        <SectionHeading title={t('nav.overview')} />
-        {isLoading ? (
-          <div className="mt-2">
-            <SkeletonStatGrid count={4} />
-          </div>
-        ) : (
-          <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-5">
-            <StatCard
-              label={t('admin.activeManagers')}
-              value={totals?.managers ?? 0}
-              icon={UserCog}
-              to="/admin/managers"
-              className="p-3"
-            />
-            <StatCard
-              label={t('admin.activeDrivers')}
-              value={totals?.drivers ?? 0}
-              icon={Users}
-              to="/fleet/drivers"
-              className="p-3"
-            />
-            <StatCard
-              label={t('admin.activeBuses')}
-              value={totals?.buses ?? 0}
-              icon={Bus}
-              to="/fleet/buses"
-              className="p-3"
-            />
-            <StatCard
-              label={t('admin.depots')}
-              value={totals?.depots ?? 0}
-              icon={Building2}
-              to="/admin/depots"
-              className="p-3"
-            />
-            <StatCard
-              label={t('admin.routes')}
-              value={totals?.routes ?? 0}
-              icon={RouteIcon}
-              to="/fleet/routes"
-              className="p-3"
-            />
-          </div>
-        )}
+        <div>
+          <SectionHeading title={t('nav.overview')} />
+          {isLoading ? (
+            <div className="mt-1.5">
+              <SkeletonStatGrid count={4} />
+            </div>
+          ) : (
+            <div className="mt-1.5 grid grid-cols-2 gap-1.5 sm:grid-cols-5">
+              {[
+                {
+                  label: t('admin.activeManagers'),
+                  value: totals?.managers ?? 0,
+                  to: '/admin/managers',
+                },
+                {
+                  label: t('admin.activeDrivers'),
+                  value: totals?.drivers ?? 0,
+                  to: '/fleet/drivers',
+                },
+                { label: t('admin.activeBuses'), value: totals?.buses ?? 0, to: '/fleet/buses' },
+                { label: t('admin.depots'), value: totals?.depots ?? 0, to: '/admin/depots' },
+                { label: t('admin.routes'), value: totals?.routes ?? 0, to: '/fleet/routes' },
+              ].map((metric) => (
+                <Link
+                  key={metric.to}
+                  to={metric.to}
+                  className="flex min-h-10 items-center gap-2 rounded-md px-2.5 py-1.5 hover:bg-muted/50"
+                >
+                  <span className="tabular text-sm font-bold">{metric.value}</span>
+                  <span className="truncate text-[0.6875rem] text-muted-foreground">
+                    {metric.label}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* --- Trends -------------------------------------------------------- */}

@@ -86,11 +86,11 @@ export function TrendChart({
     `${formatNumber(value, { maximumFractionDigits: decimals })}${unitSuffix ? ` ${unitSuffix}` : ''}`;
 
   return (
-    <Card className={cn(compact && 'bg-card/70')}>
+    <Card className={cn(compact && 'rounded-lg border-border/60 bg-transparent shadow-none')}>
       <CardHeader
         className={cn(
           'flex-row items-center justify-between gap-2 space-y-0',
-          compact && 'p-3 pb-1',
+          compact && 'px-3 py-2',
         )}
       >
         <CardTitle className={cn(compact && 'text-sm')}>{title}</CardTitle>
@@ -108,7 +108,7 @@ export function TrendChart({
         </Button>
       </CardHeader>
 
-      <CardContent className={cn(compact && 'p-3 pt-1')}>
+      <CardContent className={cn(compact && 'px-2 pb-2 pt-0')}>
         {isEmpty ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             {emptyLabel ?? t('empty.generic')}
@@ -122,7 +122,7 @@ export function TrendChart({
                 summary: formatValue(total),
               })}
             >
-              <ResponsiveContainer width="100%" height={compact ? 148 : 200}>
+              <ResponsiveContainer width="100%" height={compact ? 108 : 200}>
                 {kind === 'bar' ? (
                   <BarChart data={points} margin={{ top: 8, right: 4, bottom: 0, left: -18 }}>
                     <CartesianGrid stroke={grid} vertical={false} />

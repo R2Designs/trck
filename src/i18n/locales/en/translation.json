@@ -338,6 +338,7 @@
     "add": "Add a driver",
     "addTitle": "Who are you adding?",
     "addSubtitle": "Start with their name and staff number — you can add photos next.",
+    "saveAndAddPhotos": "Save and add face photos",
     "edit": "Edit details",
     "employeeCode": "Employee ID",
     "employeeCodeHint": "The number on their staff card.",

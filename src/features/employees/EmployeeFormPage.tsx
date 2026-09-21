@@ -129,6 +129,23 @@ export default function EmployeeFormPage() {
         description={isEditing ? undefined : t('employees.addSubtitle')}
       />
 
+      {!isEditing && isDriver && (
+        <ol className="grid grid-cols-2 gap-2" aria-label={t('employees.add')}>
+          <li className="flex items-center gap-2 rounded-lg border border-primary/50 bg-primary/10 px-3 py-2 text-sm font-semibold">
+            <span className="flex size-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+              1
+            </span>
+            {t('employees.tabs.details')}
+          </li>
+          <li className="flex items-center gap-2 rounded-lg border border-border bg-card/60 px-3 py-2 text-sm text-muted-foreground">
+            <span className="flex size-6 items-center justify-center rounded-full border border-border text-xs font-semibold">
+              2
+            </span>
+            {t('employees.faceEnrolment')}
+          </li>
+        </ol>
+      )}
+
       <Card>
         <CardContent className="space-y-4 pt-4">
           <Field
@@ -329,7 +346,7 @@ export default function EmployeeFormPage() {
           loading={form.formState.isSubmitting || save.isPending}
           loadingLabel={t('actions.saving')}
         >
-          {t('actions.save')}
+          {!isEditing && isDriver ? t('employees.saveAndAddPhotos') : t('actions.save')}
         </Button>
       </div>
     </form>
