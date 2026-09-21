@@ -1,7 +1,17 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Play, Route as RouteIcon, ScanFace, Square, Users } from 'lucide-react';
-import { SectionHeading } from '@/components/ui/card';
+import {
+  Building2,
+  Bus,
+  ChevronRight,
+  Play,
+  Route as RouteIcon,
+  ScanFace,
+  Square,
+  UserCog,
+  Users,
+} from 'lucide-react';
+import { Card, CardContent, SectionHeading } from '@/components/ui/card';
 import { StatCard } from '@/components/common/StatCard';
 import { TrendChart } from '@/components/charts/TrendChart';
 import { Button } from '@/components/ui/button';
@@ -38,38 +48,46 @@ export default function AdminDashboardPage() {
 
       {isError && <ErrorState error={error} onRetry={() => void refetch()} />}
 
-      <section className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
+      <section>
         <SectionHeading title={t('nav.overview')} />
-        <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:mt-3 sm:grid-cols-5">
-          {[
-            {
-              label: t('admin.activeManagers'),
-              value: totals?.managers ?? 0,
-              to: '/admin/managers',
-            },
-            {
-              label: t('admin.activeDrivers'),
-              value: totals?.drivers ?? 0,
-              to: '/fleet/drivers',
-            },
-            { label: t('admin.activeBuses'), value: totals?.buses ?? 0, to: '/fleet/buses' },
-            { label: t('admin.depots'), value: totals?.depots ?? 0, to: '/admin/depots' },
-            { label: t('admin.routes'), value: totals?.routes ?? 0, to: '/fleet/routes' },
-          ].map((metric) => (
-            <Link
-              key={metric.to}
-              to={metric.to}
-              className="min-h-24 bg-card p-4 transition-colors hover:bg-muted/50 sm:min-h-20 sm:p-3"
-            >
-              <span className="tabular block text-2xl font-bold leading-none">
-                {isLoading ? '—' : metric.value}
-              </span>
-              <span className="mt-2 block text-xs font-medium text-muted-foreground">
-                {metric.label}
-              </span>
-            </Link>
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="mt-3">
+            <SkeletonStatGrid count={5} />
+          </div>
+        ) : (
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-3 lg:grid-cols-5">
+            <StatCard
+              label={t('admin.activeManagers')}
+              value={totals?.managers ?? 0}
+              icon={UserCog}
+              to="/admin/managers"
+            />
+            <StatCard
+              label={t('admin.activeDrivers')}
+              value={totals?.drivers ?? 0}
+              icon={Users}
+              to="/fleet/drivers"
+            />
+            <StatCard
+              label={t('admin.activeBuses')}
+              value={totals?.buses ?? 0}
+              icon={Bus}
+              to="/fleet/buses"
+            />
+            <StatCard
+              label={t('admin.depots')}
+              value={totals?.depots ?? 0}
+              icon={Building2}
+              to="/admin/depots"
+            />
+            <StatCard
+              label={t('admin.routes')}
+              value={totals?.routes ?? 0}
+              icon={RouteIcon}
+              to="/fleet/routes"
+            />
+          </div>
+        )}
       </section>
 
       <section>
@@ -81,40 +99,60 @@ export default function AdminDashboardPage() {
         </div>
       </section>
 
-      <div className="grid items-start gap-8 md:gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-        {/* --- Today ----------------------------------------------------- */}
+      {/* --- Today ------------------------------------------------------- */}
+      <section>
+        <SectionHeading title={t('common.today')} />
+        {isLoading ? (
+          <div className="mt-2">
+            <SkeletonStatGrid count={2} />
+          </div>
+        ) : (
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:mt-2 sm:grid-cols-2 sm:gap-3">
+            <StatCard
+              label={t('admin.attendanceRate')}
+              value={
+                data?.attendance_rate_today != null
+                  ? formatPercent(data.attendance_rate_today, { decimals: 0 })
+                  : '—'
+              }
+              icon={Users}
+              to="/attendance"
+              tone={
+                data?.attendance_rate_today != null && data.attendance_rate_today < 85
+                  ? 'warning'
+                  : 'success'
+              }
+            />
+            <StatCard
+              label={t('admin.tripsToday')}
+              value={totals?.trips_today ?? 0}
+              sublabel={t('home.tripsCompleted') + `: ${totals?.trips_completed_today ?? 0}`}
+              icon={RouteIcon}
+              to="/trips"
+            />
+          </div>
+        )}
+      </section>
+
+      <div className="grid items-start gap-8 md:gap-6 lg:grid-cols-[minmax(20rem,0.75fr)_minmax(0,1.25fr)]">
         <section>
-          <SectionHeading title={t('common.today')} />
-          {isLoading ? (
-            <div className="mt-2">
-              <SkeletonStatGrid count={2} />
-            </div>
-          ) : (
-            <div className="mt-3 grid grid-cols-1 gap-4 sm:mt-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-1">
-              <StatCard
-                label={t('admin.attendanceRate')}
-                value={
-                  data?.attendance_rate_today != null
-                    ? formatPercent(data.attendance_rate_today, { decimals: 0 })
-                    : '—'
-                }
-                icon={Users}
-                to="/attendance"
-                tone={
-                  data?.attendance_rate_today != null && data.attendance_rate_today < 85
-                    ? 'warning'
-                    : 'success'
-                }
-              />
-              <StatCard
-                label={t('admin.tripsToday')}
-                value={totals?.trips_today ?? 0}
-                sublabel={t('home.tripsCompleted') + `: ${totals?.trips_completed_today ?? 0}`}
-                icon={RouteIcon}
-                to="/trips"
-              />
-            </div>
-          )}
+          <SectionHeading title={t('admin.fleetAvailability')} />
+          <Card className="mt-3 sm:mt-2">
+            <CardContent className="grid grid-cols-2 gap-x-5 gap-y-6 pt-5 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+              {(['AVAILABLE', 'ON_TRIP', 'MAINTENANCE', 'OUT_OF_SERVICE'] as const).map(
+                (status) => (
+                  <div key={status}>
+                    <p className="tabular text-2xl font-bold leading-none">
+                      {data?.fleet_availability[status] ?? 0}
+                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {t(`status.bus.${status}`)}
+                    </p>
+                  </div>
+                ),
+              )}
+            </CardContent>
+          </Card>
         </section>
 
         <TrendChart
@@ -125,20 +163,6 @@ export default function AdminDashboardPage() {
           compact
         />
       </div>
-
-      <section className="max-w-xl">
-        <SectionHeading title={t('admin.fleetAvailability')} />
-        <dl className="mt-2 divide-y divide-border/60 border-y border-border/60">
-          {(['AVAILABLE', 'ON_TRIP', 'MAINTENANCE', 'OUT_OF_SERVICE'] as const).map((status) => (
-            <div key={status} className="flex items-center justify-between gap-4 py-3.5 md:py-2.5">
-              <dt className="text-sm text-muted-foreground">{t(`status.bus.${status}`)}</dt>
-              <dd className="tabular text-sm font-semibold">
-                {data?.fleet_availability[status] ?? 0}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
     </div>
   );
 }
