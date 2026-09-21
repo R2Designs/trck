@@ -1,8 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Route as RouteIcon, Users } from 'lucide-react';
+import { ChevronRight, Play, Route as RouteIcon, ScanFace, Square, Users } from 'lucide-react';
 import { SectionHeading } from '@/components/ui/card';
 import { StatCard } from '@/components/common/StatCard';
+import { TrendChart } from '@/components/charts/TrendChart';
+import { Button } from '@/components/ui/button';
 import { SkeletonStatGrid } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/feedback/states';
 import { formatLongDate, formatPercent } from '@/lib/format';
@@ -36,9 +38,9 @@ export default function AdminDashboardPage() {
 
       {isError && <ErrorState error={error} onRetry={() => void refetch()} />}
 
-      <section className="rounded-2xl border-2 border-primary/30 bg-primary-muted/30 p-4 sm:p-5">
+      <section className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <SectionHeading title={t('nav.overview')} />
-        <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-primary/20 bg-primary/15 sm:grid-cols-5">
+        <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-5">
           {[
             {
               label: t('admin.activeManagers'),
@@ -57,7 +59,7 @@ export default function AdminDashboardPage() {
             <Link
               key={metric.to}
               to={metric.to}
-              className="min-h-20 bg-background/80 p-3 transition-colors hover:bg-background"
+              className="min-h-20 bg-card p-3 transition-colors hover:bg-muted/50"
             >
               <span className="tabular block text-2xl font-bold leading-none">
                 {isLoading ? '—' : metric.value}
@@ -67,6 +69,15 @@ export default function AdminDashboardPage() {
               </span>
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section>
+        <SectionHeading title={t('home.quickActions')} />
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <AdminAction to="/attendance/take" icon={ScanFace} label={t('home.takeAttendance')} />
+          <AdminAction to="/trips/start" icon={Play} label={t('home.startTrip')} />
+          <AdminAction to="/trips" icon={Square} label={t('home.endTrip')} />
         </div>
       </section>
 
@@ -118,6 +129,34 @@ export default function AdminDashboardPage() {
           ))}
         </dl>
       </section>
+
+      <section className="grid gap-3 md:grid-cols-2">
+        <TrendChart
+          title={t('admin.charts.distance')}
+          data={data?.series.distance ?? []}
+          kind="bar"
+          unitSuffix={t('units.km')}
+          compact
+        />
+        <TrendChart
+          title={t('admin.charts.anomalies')}
+          data={data?.series.anomalies ?? []}
+          kind="bar"
+          compact
+        />
+      </section>
     </div>
+  );
+}
+
+function AdminAction({ to, icon: Icon, label }: { to: string; icon: typeof Play; label: string }) {
+  return (
+    <Button asChild variant="outline" size="lg" className="justify-start gap-3">
+      <Link to={to}>
+        <Icon className="size-5" aria-hidden />
+        <span className="flex-1 text-left">{label}</span>
+        <ChevronRight className="size-4 opacity-50" aria-hidden />
+      </Link>
+    </Button>
   );
 }

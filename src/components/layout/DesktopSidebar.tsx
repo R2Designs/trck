@@ -1,18 +1,13 @@
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
 import {
-  BarChart3,
-  Bell,
   Bus,
   Building2,
   CalendarCheck,
-  FileText,
   Home,
   Route as RouteIcon,
-  ScrollText,
   Settings,
   ShieldAlert,
-  UserCog,
   Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -38,10 +33,7 @@ interface Item {
 
 const GROUPS: Array<{ labelKey?: string; items: Item[] }> = [
   {
-    items: [
-      { to: '/', labelKey: 'nav.home', icon: Home, end: true },
-      { to: '/admin', labelKey: 'nav.overview', icon: BarChart3, adminOnly: true },
-    ],
+    items: [{ to: '/', labelKey: 'nav.home', icon: Home, end: true }],
   },
   {
     labelKey: 'nav.attendance',
@@ -60,16 +52,7 @@ const GROUPS: Array<{ labelKey?: string; items: Item[] }> = [
       { to: '/admin/depots', labelKey: 'nav.depots', icon: Building2, adminOnly: true },
     ],
   },
-  {
-    labelKey: 'nav.more',
-    items: [
-      { to: '/reports', labelKey: 'nav.reports', icon: FileText, permission: 'report.view' },
-      { to: '/admin/managers', labelKey: 'nav.managers', icon: UserCog, adminOnly: true },
-      { to: '/admin/audit', labelKey: 'nav.auditLog', icon: ScrollText, adminOnly: true },
-      { to: '/notifications', labelKey: 'nav.alerts', icon: Bell },
-      { to: '/settings', labelKey: 'nav.settings', icon: Settings },
-    ],
-  },
+  { items: [{ to: '/settings', labelKey: 'nav.settings', icon: Settings }] },
 ];
 
 export function DesktopSidebar({
