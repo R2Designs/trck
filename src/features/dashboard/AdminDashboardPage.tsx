@@ -118,18 +118,18 @@ export default function AdminDashboardPage() {
       {/* --- Fleet ------------------------------------------------------- */}
       <section>
         <SectionHeading title={t('admin.fleetAvailability')} />
-        <Card className="mt-2">
-          <CardContent className="grid grid-cols-2 gap-4 pt-4 sm:grid-cols-4">
-            {(['AVAILABLE', 'ON_TRIP', 'MAINTENANCE', 'OUT_OF_SERVICE'] as const).map((status) => (
-              <div key={status}>
-                <p className="tabular text-2xl font-bold leading-none">
-                  {data?.fleet_availability[status] ?? 0}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">{t(`status.bus.${status}`)}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {(['AVAILABLE', 'ON_TRIP', 'MAINTENANCE', 'OUT_OF_SERVICE'] as const).map((status) => (
+            <div key={status} className="rounded-lg border border-border/70 bg-card/60 px-3 py-2.5">
+              <p className="tabular text-lg font-bold leading-none">
+                {data?.fleet_availability[status] ?? 0}
+              </p>
+              <p className="mt-1 text-[0.6875rem] text-muted-foreground">
+                {t(`status.bus.${status}`)}
+              </p>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* --- Organisation totals ------------------------------------------ */}
@@ -140,53 +140,60 @@ export default function AdminDashboardPage() {
             <SkeletonStatGrid count={4} />
           </div>
         ) : (
-          <div className="mt-2 grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-5">
             <StatCard
               label={t('admin.activeManagers')}
               value={totals?.managers ?? 0}
               icon={UserCog}
               to="/admin/managers"
+              className="p-3"
             />
             <StatCard
               label={t('admin.activeDrivers')}
               value={totals?.drivers ?? 0}
               icon={Users}
               to="/fleet/drivers"
+              className="p-3"
             />
             <StatCard
               label={t('admin.activeBuses')}
               value={totals?.buses ?? 0}
               icon={Bus}
               to="/fleet/buses"
+              className="p-3"
             />
             <StatCard
               label={t('admin.depots')}
               value={totals?.depots ?? 0}
               icon={Building2}
               to="/admin/depots"
+              className="p-3"
             />
             <StatCard
               label={t('admin.routes')}
               value={totals?.routes ?? 0}
               icon={RouteIcon}
               to="/fleet/routes"
+              className="p-3"
             />
           </div>
         )}
       </section>
 
       {/* --- Trends -------------------------------------------------------- */}
-      <section className="grid gap-4 lg:grid-cols-2">
+      <section className="grid gap-3 md:grid-cols-2">
         <TrendChart
           title={t('admin.charts.attendance')}
           data={data?.series.attendance ?? []}
           kind="line"
+          compact
         />
         <TrendChart
           title={t('admin.charts.distance')}
           data={data?.series.distance ?? []}
           kind="bar"
           unitSuffix={t('units.km')}
+          compact
         />
         <TrendChart
           title={t('admin.charts.efficiency')}
@@ -194,11 +201,13 @@ export default function AdminDashboardPage() {
           kind="line"
           unitSuffix={t('units.kmpl')}
           decimals={2}
+          compact
         />
         <TrendChart
           title={t('admin.charts.anomalies')}
           data={data?.series.anomalies ?? []}
           kind="bar"
+          compact
         />
       </section>
 
@@ -210,26 +219,26 @@ export default function AdminDashboardPage() {
         ) : (
           <Card className="mt-2 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[34rem] text-sm">
+              <table className="w-full min-w-[34rem] text-xs">
                 <caption className="sr-only">{t('admin.charts.depotComparison')}</caption>
                 <thead className="bg-muted">
                   <tr>
-                    <th scope="col" className="px-3 py-2 text-left font-semibold">
+                    <th scope="col" className="px-3 py-1.5 text-left font-semibold">
                       {t('depots.singular')}
                     </th>
-                    <th scope="col" className="px-3 py-2 text-right font-semibold">
+                    <th scope="col" className="px-3 py-1.5 text-right font-semibold">
                       {t('nav.buses')}
                     </th>
-                    <th scope="col" className="px-3 py-2 text-right font-semibold">
+                    <th scope="col" className="px-3 py-1.5 text-right font-semibold">
                       {t('nav.drivers')}
                     </th>
-                    <th scope="col" className="px-3 py-2 text-right font-semibold">
+                    <th scope="col" className="px-3 py-1.5 text-right font-semibold">
                       {t('nav.trips')}
                     </th>
-                    <th scope="col" className="px-3 py-2 text-right font-semibold">
+                    <th scope="col" className="px-3 py-1.5 text-right font-semibold">
                       {t('home.distanceTravelled')}
                     </th>
-                    <th scope="col" className="px-3 py-2 text-right font-semibold">
+                    <th scope="col" className="px-3 py-1.5 text-right font-semibold">
                       {t('anomalies.title')}
                     </th>
                   </tr>
@@ -237,14 +246,14 @@ export default function AdminDashboardPage() {
                 <tbody className="divide-y divide-border">
                   {data?.depot_comparison.map((depot) => (
                     <tr key={depot.depot_id}>
-                      <td className="px-3 py-2 font-medium">{depot.name}</td>
-                      <td className="tabular px-3 py-2 text-right">{depot.buses}</td>
-                      <td className="tabular px-3 py-2 text-right">{depot.drivers}</td>
-                      <td className="tabular px-3 py-2 text-right">{depot.trips}</td>
-                      <td className="tabular px-3 py-2 text-right">
+                      <td className="px-3 py-1.5 font-medium">{depot.name}</td>
+                      <td className="tabular px-3 py-1.5 text-right">{depot.buses}</td>
+                      <td className="tabular px-3 py-1.5 text-right">{depot.drivers}</td>
+                      <td className="tabular px-3 py-1.5 text-right">{depot.trips}</td>
+                      <td className="tabular px-3 py-1.5 text-right">
                         {formatDistance(depot.distance_km, 0)}
                       </td>
-                      <td className="tabular px-3 py-2 text-right">
+                      <td className="tabular px-3 py-1.5 text-right">
                         {depot.anomalies > 0 ? (
                           <Badge tone="warning" size="sm">
                             {depot.anomalies}
@@ -275,12 +284,10 @@ export default function AdminDashboardPage() {
         {isLoading ? (
           <SkeletonList count={3} className="mt-2" />
         ) : (data?.repeat_offenders.length ?? 0) === 0 ? (
-          <Card className="mt-2">
-            <CardContent className="flex items-center gap-2.5 pt-4 text-sm text-muted-foreground">
-              <CheckCircle2 className="size-5 text-success" aria-hidden />
-              {t('anomalies.empty')}
-            </CardContent>
-          </Card>
+          <div className="mt-2 flex items-center gap-2 rounded-lg border border-border/70 bg-card/50 px-3 py-2 text-xs text-muted-foreground">
+            <CheckCircle2 className="size-4 text-success" aria-hidden />
+            {t('anomalies.empty')}
+          </div>
         ) : (
           <ul className="mt-2 space-y-3">
             {data?.repeat_offenders.map((bus) => (

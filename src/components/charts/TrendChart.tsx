@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatDate, formatNumber } from '@/lib/format';
 import { useTheme } from '@/app/theme';
+import { cn } from '@/lib/cn';
 
 /**
  * Time-series charts for the organisation dashboard.
@@ -51,6 +52,7 @@ export function TrendChart({
   unitSuffix,
   decimals = 0,
   emptyLabel,
+  compact = false,
 }: {
   title: string;
   data: readonly TrendPoint[];
@@ -58,6 +60,7 @@ export function TrendChart({
   unitSuffix?: string;
   decimals?: number;
   emptyLabel?: string;
+  compact?: boolean;
 }) {
   const { t } = useTranslation();
   const { resolved } = useTheme();
@@ -83,9 +86,14 @@ export function TrendChart({
     `${formatNumber(value, { maximumFractionDigits: decimals })}${unitSuffix ? ` ${unitSuffix}` : ''}`;
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
-        <CardTitle>{title}</CardTitle>
+    <Card className={cn(compact && 'bg-card/70')}>
+      <CardHeader
+        className={cn(
+          'flex-row items-center justify-between gap-2 space-y-0',
+          compact && 'p-3 pb-1',
+        )}
+      >
+        <CardTitle className={cn(compact && 'text-sm')}>{title}</CardTitle>
         <Button
           variant="ghost"
           size="sm"
@@ -94,11 +102,13 @@ export function TrendChart({
           aria-controls={tableId}
         >
           <Table2 className="size-4" aria-hidden />
-          <span className="sr-only sm:not-sr-only">{t('actions.viewDetails')}</span>
+          <span className={cn('sr-only sm:not-sr-only', compact && 'sm:sr-only')}>
+            {t('actions.viewDetails')}
+          </span>
         </Button>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className={cn(compact && 'p-3 pt-1')}>
         {isEmpty ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             {emptyLabel ?? t('empty.generic')}
@@ -112,7 +122,7 @@ export function TrendChart({
                 summary: formatValue(total),
               })}
             >
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={compact ? 148 : 200}>
                 {kind === 'bar' ? (
                   <BarChart data={points} margin={{ top: 8, right: 4, bottom: 0, left: -18 }}>
                     <CartesianGrid stroke={grid} vertical={false} />
