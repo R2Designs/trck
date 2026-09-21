@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import {
   CalendarCheck,
+  ChevronLeft,
+  ChevronRight,
+  PenLine,
   Pencil,
   Route as RouteIcon,
   ScanFace,
@@ -10,7 +13,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { PageHeader, DetailList, DetailRow } from '@/components/common/PageHeader';
-import { EntityCard, initialsOf } from '@/components/common/EntityCard';
+import { EntityCard } from '@/components/common/EntityCard';
 import { Badge, EmploymentStatusBadge, TripStatusBadge } from '@/components/common/StatusBadge';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Button } from '@/components/ui/button';
@@ -19,12 +22,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/contro
 import { SkeletonList } from '@/components/ui/skeleton';
 import { EmptyState, ErrorState, NotFoundState } from '@/components/feedback/states';
 import { useToast } from '@/components/ui/toast';
-import { EMPTY_VALUE, formatDate, formatDateTime, formatTime } from '@/lib/format';
+import { EMPTY_VALUE, formatDate, formatDateTime } from '@/lib/format';
 import { toAppError } from '@/lib/errors';
-import { differenceInDays } from 'date-fns';
+import {
+  addMonths,
+  differenceInDays,
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameMonth,
+  isToday,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+} from 'date-fns';
+import { cn } from '@/lib/cn';
 import { useAuth } from '@/features/auth/session';
 import { useEmployee, useFaceEnrolmentStatus, useSetEmployeeActive } from '@/features/fleet/api';
 import { useAttendance } from '@/features/attendance/api';
+import type { AttendanceWithRelations } from '@/features/attendance/api';
 import { useTrips } from '@/features/trips/api';
 import { useDeleteBiometrics } from './enrolment';
 
@@ -40,10 +57,19 @@ export default function EmployeeDetailPage() {
   const { employeeId } = useParams<{ employeeId: string }>();
   const { can } = useAuth();
   const { toast } = useToast();
+  const [attendanceMonth, setAttendanceMonth] = useState(() => startOfMonth(new Date()));
+
+  const attendanceFrom = format(startOfMonth(attendanceMonth), 'yyyy-MM-dd');
+  const attendanceTo = format(endOfMonth(attendanceMonth), 'yyyy-MM-dd');
 
   const employee = useEmployee(employeeId);
   const faces = useFaceEnrolmentStatus(employeeId);
-  const attendance = useAttendance({ employeeId, limit: 20 });
+  const attendance = useAttendance({
+    employeeId,
+    from: attendanceFrom,
+    to: attendanceTo,
+    limit: 100,
+  });
   const trips = useTrips({ driverId: employeeId, limit: 20 });
   const setActive = useSetEmployeeActive();
   const deleteBiometrics = useDeleteBiometrics();
@@ -135,10 +161,19 @@ export default function EmployeeDetailPage() {
         </Card>
       )}
 
+      {person.employee_type === 'DRIVER' && (
+        <MonthlyAttendanceCalendar
+          month={attendanceMonth}
+          records={attendance.data ?? []}
+          loading={attendance.isLoading}
+          onPrevious={() => setAttendanceMonth((current) => subMonths(current, 1))}
+          onNext={() => setAttendanceMonth((current) => addMonths(current, 1))}
+        />
+      )}
+
       <Tabs defaultValue="details">
         <TabsList>
           <TabsTrigger value="details">{t('employees.tabs.details')}</TabsTrigger>
-          <TabsTrigger value="attendance">{t('employees.tabs.attendance')}</TabsTrigger>
           <TabsTrigger value="trips">{t('employees.tabs.trips')}</TabsTrigger>
         </TabsList>
 
@@ -190,35 +225,6 @@ export default function EmployeeDetailPage() {
               </CardContent>
             </Card>
           )}
-        </TabsContent>
-
-        <TabsContent value="attendance" className="space-y-3">
-          {attendance.isLoading && <SkeletonList count={3} />}
-          {!attendance.isLoading && (attendance.data?.length ?? 0) === 0 && (
-            <EmptyState
-              icon={CalendarCheck}
-              title={t('empty.attendance')}
-              description={t('empty.attendanceBody')}
-            />
-          )}
-          <ul className="space-y-3">
-            {attendance.data?.map((record) => (
-              <li key={record.id}>
-                <EntityCard
-                  avatarText={initialsOf(person.full_name)}
-                  title={`${formatDate(record.attendance_date)} · ${formatTime(record.recorded_at)}`}
-                  subtitle={[record.bus?.registration_number, record.route?.name]
-                    .filter(Boolean)
-                    .join(' · ')}
-                  meta={
-                    <Badge tone={record.manual_override ? 'warning' : 'success'} size="sm">
-                      {t(`attendance.methods.${record.method}`)}
-                    </Badge>
-                  }
-                />
-              </li>
-            ))}
-          </ul>
         </TabsContent>
 
         <TabsContent value="trips" className="space-y-3">
@@ -299,5 +305,177 @@ export default function EmployeeDetailPage() {
         }}
       />
     </div>
+  );
+}
+
+function MonthlyAttendanceCalendar({
+  month,
+  records,
+  loading,
+  onPrevious,
+  onNext,
+}: {
+  month: Date;
+  records: AttendanceWithRelations[];
+  loading: boolean;
+  onPrevious: () => void;
+  onNext: () => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage ?? i18n.language;
+  const days = useMemo(
+    () =>
+      eachDayOfInterval({
+        start: startOfWeek(startOfMonth(month), { weekStartsOn: 1 }),
+        end: endOfWeek(endOfMonth(month), { weekStartsOn: 1 }),
+      }),
+    [month],
+  );
+  const recordsByDate = useMemo(() => {
+    const grouped = new Map<string, AttendanceWithRelations[]>();
+    for (const record of records) {
+      const day = grouped.get(record.attendance_date) ?? [];
+      day.push(record);
+      grouped.set(record.attendance_date, day);
+    }
+    return grouped;
+  }, [records]);
+  const weekdayNames = useMemo(() => {
+    const monday = new Date(2026, 0, 5);
+    const formatter = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+    return Array.from({ length: 7 }, (_, index) =>
+      formatter.format(new Date(2026, 0, monday.getDate() + index)),
+    );
+  }, [locale]);
+  const monthLabel = useMemo(
+    () => new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(month),
+    [locale, month],
+  );
+  const faceDays = new Set(
+    records
+      .filter((record) => record.method === 'FACE_RECOGNITION')
+      .map((record) => record.attendance_date),
+  ).size;
+  const manualDays = new Set(
+    records
+      .filter((record) => record.method !== 'FACE_RECOGNITION')
+      .map((record) => record.attendance_date),
+  ).size;
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="gap-4 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <CalendarCheck className="size-5 text-primary" aria-hidden />
+            {t('attendance.history')}
+          </CardTitle>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Badge tone="success" icon={ScanFace}>
+              {t('attendance.methods.FACE_RECOGNITION')} · {faceDays}
+            </Badge>
+            <Badge tone="warning" icon={PenLine}>
+              {t('attendance.methods.MANUAL_OVERRIDE')} · {manualDays}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background p-1 sm:min-w-64">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={t('actions.back')}
+            onClick={onPrevious}
+          >
+            <ChevronLeft aria-hidden />
+          </Button>
+          <p className="min-w-0 text-center text-sm font-bold capitalize sm:text-base">
+            {monthLabel}
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={t('actions.next')}
+            onClick={onNext}
+          >
+            <ChevronRight aria-hidden />
+          </Button>
+        </div>
+      </CardHeader>
+
+      <CardContent className="p-3 pt-3 sm:p-6 sm:pt-5">
+        {loading ? (
+          <div className="skeleton h-[22rem] w-full rounded-xl" />
+        ) : (
+          <div className="grid grid-cols-7 gap-1.5 sm:gap-2" role="grid" aria-label={monthLabel}>
+            {weekdayNames.map((weekday) => (
+              <div
+                key={weekday}
+                className="pb-1 text-center text-[0.65rem] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs"
+                role="columnheader"
+              >
+                {weekday}
+              </div>
+            ))}
+            {days.map((day) => {
+              const key = format(day, 'yyyy-MM-dd');
+              const dayRecords = recordsByDate.get(key) ?? [];
+              const hasFace = dayRecords.some((record) => record.method === 'FACE_RECOGNITION');
+              const hasManual = dayRecords.some((record) => record.method !== 'FACE_RECOGNITION');
+              const inMonth = isSameMonth(day, month);
+              const labels = [
+                hasFace ? t('attendance.methods.FACE_RECOGNITION') : null,
+                hasManual ? t('attendance.methods.MANUAL_OVERRIDE') : null,
+              ].filter(Boolean);
+
+              return (
+                <div
+                  key={key}
+                  role="gridcell"
+                  aria-label={`${formatDate(day)}${labels.length > 0 ? ` · ${labels.join(', ')}` : ''}`}
+                  className={cn(
+                    'relative flex min-h-14 flex-col justify-between rounded-lg border p-1.5 sm:min-h-24 sm:p-3',
+                    !inMonth && 'border-transparent opacity-30',
+                    inMonth && !hasFace && !hasManual && 'border-border bg-background',
+                    inMonth && hasFace && !hasManual && 'border-success/40 bg-success-muted/45',
+                    inMonth && hasManual && !hasFace && 'border-warning/50 bg-warning-muted/45',
+                    inMonth &&
+                      hasFace &&
+                      hasManual &&
+                      'border-primary/35 bg-[linear-gradient(135deg,hsl(var(--success-muted))_0_50%,hsl(var(--warning-muted))_50%_100%)]',
+                    isToday(day) && 'ring-2 ring-primary ring-offset-2 ring-offset-card',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'text-xs font-semibold sm:text-sm',
+                      !inMonth && 'text-muted-foreground',
+                    )}
+                  >
+                    {format(day, 'd')}
+                  </span>
+                  {inMonth && (hasFace || hasManual) && (
+                    <div className="flex items-center gap-1" aria-hidden>
+                      {hasFace && (
+                        <span className="flex size-5 items-center justify-center rounded-full bg-success text-success-foreground sm:size-7">
+                          <ScanFace className="size-3 sm:size-4" />
+                        </span>
+                      )}
+                      {hasManual && (
+                        <span className="flex size-5 items-center justify-center rounded-full bg-warning text-warning-foreground sm:size-7">
+                          <PenLine className="size-3 sm:size-4" />
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
