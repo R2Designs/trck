@@ -1,0 +1,22 @@
+node_modules
+dist
+dev-dist
+coverage
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+/*.traineddata
+playwright-report
+test-results
+.vite
+supabase/.branches
+supabase/.temp
+
+# Emitted output. `tsc` is only ever run with --noEmit here; anything matching
+# these inside src/ is an accident, and committing it breaks the build.
+*.tsbuildinfo
+src/**/*.js
+src/**/*.jsx
+supabase/functions/_shared/domain/*.js

@@ -1,0 +1,12 @@
+{
+  "lock": false,
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@^2"
+  },
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "lib": ["deno.window", "dom"]
+  }
+}

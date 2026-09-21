@@ -1,0 +1,264 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * ---------------------------------------------------------------------------
+ * trck design tokens
+ * ---------------------------------------------------------------------------
+ * Two themes, one contract. Every token below exists in both, so no component
+ * ever needs a `dark:` variant for colour — it asks for `bg-card` and gets the
+ * right thing.
+ *
+ * Contrast targets (WCAG 2.2 AA):
+ *   foreground / background          >= 12:1   (sunlight legibility)
+ *   muted-foreground / background    >=  4.6:1
+ *   primary-foreground / primary     >=  7:1
+ *   every status foreground / its background >= 4.5:1
+ *
+ * Severity is never colour alone: StatusBadge and AnomalyBadge always pair the
+ * colour with an icon and a translated label.
+ * ---------------------------------------------------------------------------
+ */
+
+@layer base {
+  :root {
+    --background: 40 33% 98%;
+    --foreground: 200 24% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 200 24% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 200 24% 10%;
+
+    /* Deep fleet green: reads as "operational", stays legible in sunlight. */
+    --primary: 162 62% 20%;
+    --primary-foreground: 150 40% 98%;
+    --primary-muted: 162 45% 94%;
+
+    --secondary: 200 18% 94%;
+    --secondary-foreground: 200 24% 16%;
+
+    --muted: 200 16% 95%;
+    --muted-foreground: 200 12% 38%;
+
+    --accent: 190 70% 94%;
+    --accent-foreground: 195 60% 18%;
+
+    --destructive: 0 68% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-muted: 0 76% 96%;
+
+    --success: 150 64% 26%;
+    --success-foreground: 0 0% 100%;
+    --success-muted: 150 55% 94%;
+
+    --warning: 33 92% 32%;
+    --warning-foreground: 0 0% 100%;
+    --warning-muted: 38 92% 94%;
+
+    --info: 205 72% 33%;
+    --info-foreground: 0 0% 100%;
+    --info-muted: 205 80% 95%;
+
+    --border: 200 14% 86%;
+    --input: 200 14% 82%;
+    --ring: 162 62% 30%;
+
+    --radius: 0.875rem;
+  }
+
+  /*
+   * Dark mode resolution order:
+   *   1. an explicit data-theme on <html> (the Settings toggle) always wins;
+   *   2. otherwise the operating system preference applies.
+   * The media query is guarded so that choosing "Light" is respected even on a
+   * device set to dark.
+   */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      /* Near-black canvas (#000001); surfaces step up subtly for hierarchy. */
+      --background: 240 100% 0.2%;
+      --foreground: 180 12% 96%;
+
+      --card: 200 20% 4%;
+      --card-foreground: 180 12% 96%;
+
+      --popover: 200 20% 4%;
+      --popover-foreground: 180 12% 96%;
+
+      --primary: 160 58% 46%;
+      --primary-foreground: 165 60% 6%;
+      --primary-muted: 162 40% 10%;
+
+      --secondary: 200 18% 9%;
+      --secondary-foreground: 180 12% 94%;
+
+      --muted: 200 16% 8%;
+      --muted-foreground: 200 10% 68%;
+
+      --accent: 195 35% 10%;
+      --accent-foreground: 190 70% 88%;
+
+      --destructive: 0 72% 60%;
+      --destructive-foreground: 0 40% 8%;
+      --destructive-muted: 0 35% 11%;
+
+      --success: 150 58% 48%;
+      --success-foreground: 150 60% 6%;
+      --success-muted: 150 35% 9%;
+
+      --warning: 38 92% 58%;
+      --warning-foreground: 35 70% 8%;
+      --warning-muted: 38 35% 11%;
+
+      --info: 202 80% 62%;
+      --info-foreground: 205 60% 8%;
+      --info-muted: 205 35% 11%;
+
+      --border: 200 14% 16%;
+      --input: 200 14% 20%;
+      --ring: 160 58% 50%;
+    }
+  }
+
+  :root[data-theme='dark'] {
+    /* Near-black canvas (#000001); surfaces step up subtly for hierarchy. */
+    --background: 240 100% 0.2%;
+    --foreground: 180 12% 96%;
+
+    --card: 200 20% 4%;
+    --card-foreground: 180 12% 96%;
+
+    --popover: 200 20% 4%;
+    --popover-foreground: 180 12% 96%;
+
+    --primary: 160 58% 46%;
+    --primary-foreground: 165 60% 6%;
+    --primary-muted: 162 40% 10%;
+
+    --secondary: 200 18% 9%;
+    --secondary-foreground: 180 12% 94%;
+
+    --muted: 200 16% 8%;
+    --muted-foreground: 200 10% 68%;
+
+    --accent: 195 35% 10%;
+    --accent-foreground: 190 70% 88%;
+
+    --destructive: 0 72% 60%;
+    --destructive-foreground: 0 40% 8%;
+    --destructive-muted: 0 35% 11%;
+
+    --success: 150 58% 48%;
+    --success-foreground: 150 60% 6%;
+    --success-muted: 150 35% 9%;
+
+    --warning: 38 92% 58%;
+    --warning-foreground: 35 70% 8%;
+    --warning-muted: 38 35% 11%;
+
+    --info: 202 80% 62%;
+    --info-foreground: 205 60% 8%;
+    --info-muted: 205 35% 11%;
+
+    --border: 200 14% 16%;
+    --input: 200 14% 20%;
+    --ring: 160 58% 50%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    /* Indic scripts sit taller than Latin; a looser default line-height stops
+       Tamil, Telugu and Kannada from clipping their vowel signs. */
+    line-height: 1.55;
+    overscroll-behavior-y: none;
+  }
+
+  /* Never let a translated string introduce horizontal scrolling. */
+  body,
+  #root {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Respect the OS setting and the in-app preference. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  :root[data-reduce-motion='true'] *,
+  :root[data-reduce-motion='true'] *::before,
+  :root[data-reduce-motion='true'] *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Numbers in tables and readings line up; names and labels do not need to. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  .skeleton {
+    @apply relative overflow-hidden rounded-md bg-muted;
+  }
+
+  .skeleton::after {
+    @apply absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r
+      from-transparent via-black/5 to-transparent content-[''];
+  }
+
+  :root[data-theme='dark'] .skeleton::after {
+    @apply via-white/10;
+  }
+
+  /* Sticky primary action used across the capture and wizard screens. */
+  .sticky-cta {
+    @apply sticky bottom-0 z-20 -mx-4 border-t border-border bg-background/95 px-4
+      pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur;
+  }
+
+  .safe-bottom {
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+@layer utilities {
+  /* Screen-reader-only, but focusable (used by the skip link). */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}
