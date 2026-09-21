@@ -4,7 +4,6 @@ import {
   Activity,
   CalendarCheck,
   CheckCircle2,
-  ChevronRight,
   Clock,
   Fuel,
   Play,
@@ -19,7 +18,6 @@ import { SectionHeading, Card, CardContent } from '@/components/ui/card';
 import { StatCard } from '@/components/common/StatCard';
 import { EntityCard } from '@/components/common/EntityCard';
 import { Badge, TripStatusBadge } from '@/components/common/StatusBadge';
-import { Button } from '@/components/ui/button';
 import { SkeletonList, SkeletonStatGrid } from '@/components/ui/skeleton';
 import { ErrorState, NoDepotState } from '@/components/feedback/states';
 import {
@@ -30,6 +28,7 @@ import {
 } from '@/lib/format';
 import { useActiveDepot, useAuth, useIdentity } from '@/features/auth/session';
 import { useManagerDashboard } from './api';
+import { DashboardActionStrip } from './DashboardActionStrip';
 
 /**
  * The manager's day.
@@ -64,28 +63,23 @@ export default function ManagerHomePage() {
       </header>
 
       {/* --- Quick actions --------------------------------------------- */}
-      <section>
-        <SectionHeading title={t('home.quickActions')} />
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
-          {can('attendance.record') && (
-            <QuickAction
-              to="/attendance/take"
-              icon={ScanFace}
-              label={t('home.takeAttendance')}
-              primary
-            />
-          )}
-          {can('trip.create') && (
-            <QuickAction to="/trips/start" icon={Play} label={t('home.startTrip')} />
-          )}
-          {can('trip.complete') && (
-            <QuickAction to="/trips" icon={Square} label={t('home.endTrip')} />
-          )}
-          {can('employee.create') && (
-            <QuickAction to="/fleet/drivers/new" icon={Plus} label={t('home.addDriver')} />
-          )}
-        </div>
-      </section>
+      <DashboardActionStrip
+        title={t('home.quickActions')}
+        actions={[
+          ...(can('attendance.record')
+            ? [{ to: '/attendance/take', icon: ScanFace, label: t('home.takeAttendance') }]
+            : []),
+          ...(can('trip.create')
+            ? [{ to: '/trips/start', icon: Play, label: t('home.startTrip') }]
+            : []),
+          ...(can('trip.complete')
+            ? [{ to: '/trips', icon: Square, label: t('home.endTrip') }]
+            : []),
+          ...(can('employee.create')
+            ? [{ to: '/fleet/drivers/new', icon: Plus, label: t('home.addDriver') }]
+            : []),
+        ]}
+      />
 
       {isError && <ErrorState error={error} onRetry={() => void refetch()} />}
 
@@ -299,32 +293,5 @@ export default function ManagerHomePage() {
       )}
 
     </div>
-  );
-}
-
-function QuickAction({
-  to,
-  icon: Icon,
-  label,
-  primary,
-}: {
-  to: string;
-  icon: typeof Play;
-  label: string;
-  primary?: boolean;
-}) {
-  return (
-    <Button
-      asChild
-      variant={primary ? 'primary' : 'outline'}
-      size="lg"
-      className="min-h-14 justify-start gap-3 px-4 text-left lg:min-h-16 lg:px-5"
-    >
-      <Link to={to}>
-        <Icon className="size-5 shrink-0" aria-hidden />
-        <span className="flex-1 text-left text-sm font-semibold">{label}</span>
-        <ChevronRight className="size-4 shrink-0 opacity-60" aria-hidden />
-      </Link>
-    </Button>
   );
 }

@@ -1,9 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
 import {
   Building2,
   Bus,
-  ChevronRight,
   Play,
   Route as RouteIcon,
   ScanFace,
@@ -14,12 +12,12 @@ import {
 import { Card, CardContent, SectionHeading } from '@/components/ui/card';
 import { StatCard } from '@/components/common/StatCard';
 import { TrendChart } from '@/components/charts/TrendChart';
-import { Button } from '@/components/ui/button';
 import { SkeletonStatGrid } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/feedback/states';
 import { formatLongDate, formatPercent } from '@/lib/format';
 import { useIdentity } from '@/features/auth/session';
 import { useAdminDashboard } from './api';
+import { DashboardActionStrip } from './DashboardActionStrip';
 
 /**
  * Organisation overview.
@@ -49,6 +47,15 @@ export default function AdminDashboardPage() {
       </header>
 
       {isError && <ErrorState error={error} onRetry={() => void refetch()} />}
+
+      <DashboardActionStrip
+        title={t('home.quickActions')}
+        actions={[
+          { to: '/attendance/take', icon: ScanFace, label: t('home.takeAttendance') },
+          { to: '/trips/start', icon: Play, label: t('home.startTrip') },
+          { to: '/trips', icon: Square, label: t('home.endTrip') },
+        ]}
+      />
 
       <section>
         <SectionHeading title={t('nav.overview')} />
@@ -95,15 +102,6 @@ export default function AdminDashboardPage() {
             />
           </div>
         )}
-      </section>
-
-      <section>
-        <SectionHeading title={t('home.quickActions')} />
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:gap-4">
-          <AdminAction to="/attendance/take" icon={ScanFace} label={t('home.takeAttendance')} />
-          <AdminAction to="/trips/start" icon={Play} label={t('home.startTrip')} />
-          <AdminAction to="/trips" icon={Square} label={t('home.endTrip')} />
-        </div>
       </section>
 
       {/* --- Today ------------------------------------------------------- */}
@@ -172,22 +170,5 @@ export default function AdminDashboardPage() {
         />
       </div>
     </div>
-  );
-}
-
-function AdminAction({ to, icon: Icon, label }: { to: string; icon: typeof Play; label: string }) {
-  return (
-    <Button
-      asChild
-      variant="outline"
-      size="lg"
-      className="min-h-14 justify-start gap-3 px-4 lg:min-h-16 lg:px-5"
-    >
-      <Link to={to}>
-        <Icon className="size-5" aria-hidden />
-        <span className="flex-1 text-left">{label}</span>
-        <ChevronRight className="size-4 opacity-50" aria-hidden />
-      </Link>
-    </Button>
   );
 }
