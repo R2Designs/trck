@@ -81,40 +81,50 @@ export default function AdminDashboardPage() {
         </div>
       </section>
 
-      {/* --- Today ------------------------------------------------------- */}
-      <section>
-        <SectionHeading title={t('common.today')} />
-        {isLoading ? (
-          <div className="mt-2">
-            <SkeletonStatGrid count={2} />
-          </div>
-        ) : (
-          <div className="mt-2 grid grid-cols-2 gap-3">
-            <StatCard
-              label={t('admin.attendanceRate')}
-              value={
-                data?.attendance_rate_today != null
-                  ? formatPercent(data.attendance_rate_today, { decimals: 0 })
-                  : '—'
-              }
-              icon={Users}
-              to="/attendance"
-              tone={
-                data?.attendance_rate_today != null && data.attendance_rate_today < 85
-                  ? 'warning'
-                  : 'success'
-              }
-            />
-            <StatCard
-              label={t('admin.tripsToday')}
-              value={totals?.trips_today ?? 0}
-              sublabel={t('home.tripsCompleted') + `: ${totals?.trips_completed_today ?? 0}`}
-              icon={RouteIcon}
-              to="/trips"
-            />
-          </div>
-        )}
-      </section>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+        {/* --- Today ----------------------------------------------------- */}
+        <section>
+          <SectionHeading title={t('common.today')} />
+          {isLoading ? (
+            <div className="mt-2">
+              <SkeletonStatGrid count={2} />
+            </div>
+          ) : (
+            <div className="mt-2 grid grid-cols-2 gap-3 lg:grid-cols-1">
+              <StatCard
+                label={t('admin.attendanceRate')}
+                value={
+                  data?.attendance_rate_today != null
+                    ? formatPercent(data.attendance_rate_today, { decimals: 0 })
+                    : '—'
+                }
+                icon={Users}
+                to="/attendance"
+                tone={
+                  data?.attendance_rate_today != null && data.attendance_rate_today < 85
+                    ? 'warning'
+                    : 'success'
+                }
+              />
+              <StatCard
+                label={t('admin.tripsToday')}
+                value={totals?.trips_today ?? 0}
+                sublabel={t('home.tripsCompleted') + `: ${totals?.trips_completed_today ?? 0}`}
+                icon={RouteIcon}
+                to="/trips"
+              />
+            </div>
+          )}
+        </section>
+
+        <TrendChart
+          title={t('admin.charts.distance')}
+          data={data?.series.distance ?? []}
+          kind="bar"
+          unitSuffix={t('units.km')}
+          compact
+        />
+      </div>
 
       <section className="max-w-xl">
         <SectionHeading title={t('admin.fleetAvailability')} />
@@ -128,22 +138,6 @@ export default function AdminDashboardPage() {
             </div>
           ))}
         </dl>
-      </section>
-
-      <section className="grid gap-3 md:grid-cols-2">
-        <TrendChart
-          title={t('admin.charts.distance')}
-          data={data?.series.distance ?? []}
-          kind="bar"
-          unitSuffix={t('units.km')}
-          compact
-        />
-        <TrendChart
-          title={t('admin.charts.anomalies')}
-          data={data?.series.anomalies ?? []}
-          kind="bar"
-          compact
-        />
       </section>
     </div>
   );
