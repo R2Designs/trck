@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Route as RouteIcon, TriangleAlert, Users } from 'lucide-react';
+import { Route as RouteIcon, Users } from 'lucide-react';
 import { SectionHeading } from '@/components/ui/card';
 import { StatCard } from '@/components/common/StatCard';
 import { SkeletonStatGrid } from '@/components/ui/skeleton';
@@ -36,15 +36,49 @@ export default function AdminDashboardPage() {
 
       {isError && <ErrorState error={error} onRetry={() => void refetch()} />}
 
+      <section className="rounded-2xl border-2 border-primary/30 bg-primary-muted/30 p-4 sm:p-5">
+        <SectionHeading title={t('nav.overview')} />
+        <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-primary/20 bg-primary/15 sm:grid-cols-5">
+          {[
+            {
+              label: t('admin.activeManagers'),
+              value: totals?.managers ?? 0,
+              to: '/admin/managers',
+            },
+            {
+              label: t('admin.activeDrivers'),
+              value: totals?.drivers ?? 0,
+              to: '/fleet/drivers',
+            },
+            { label: t('admin.activeBuses'), value: totals?.buses ?? 0, to: '/fleet/buses' },
+            { label: t('admin.depots'), value: totals?.depots ?? 0, to: '/admin/depots' },
+            { label: t('admin.routes'), value: totals?.routes ?? 0, to: '/fleet/routes' },
+          ].map((metric) => (
+            <Link
+              key={metric.to}
+              to={metric.to}
+              className="min-h-20 bg-background/80 p-3 transition-colors hover:bg-background"
+            >
+              <span className="tabular block text-2xl font-bold leading-none">
+                {isLoading ? '—' : metric.value}
+              </span>
+              <span className="mt-2 block text-xs font-medium text-muted-foreground">
+                {metric.label}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* --- Today ------------------------------------------------------- */}
       <section>
         <SectionHeading title={t('common.today')} />
         {isLoading ? (
           <div className="mt-2">
-            <SkeletonStatGrid count={4} />
+            <SkeletonStatGrid count={2} />
           </div>
         ) : (
-          <div className="mt-2 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="mt-2 grid grid-cols-2 gap-3">
             <StatCard
               label={t('admin.attendanceRate')}
               value={
@@ -67,70 +101,23 @@ export default function AdminDashboardPage() {
               icon={RouteIcon}
               to="/trips"
             />
-            <StatCard
-              label={t('admin.openAnomalies')}
-              value={totals?.anomalies_open ?? 0}
-              icon={TriangleAlert}
-              to="/alerts"
-              tone={(totals?.anomalies_open ?? 0) > 0 ? 'warning' : 'default'}
-            />
-            <StatCard
-              label={t('admin.highSeverity')}
-              value={totals?.anomalies_high ?? 0}
-              icon={TriangleAlert}
-              to="/alerts"
-              tone={(totals?.anomalies_high ?? 0) > 0 ? 'danger' : 'default'}
-            />
           </div>
         )}
       </section>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <section>
-          <SectionHeading title={t('admin.fleetAvailability')} />
-          <dl className="mt-2 divide-y divide-border/60 border-y border-border/60">
-            {(['AVAILABLE', 'ON_TRIP', 'MAINTENANCE', 'OUT_OF_SERVICE'] as const).map((status) => (
-              <div key={status} className="flex items-center justify-between gap-4 py-2.5">
-                <dt className="text-sm text-muted-foreground">{t(`status.bus.${status}`)}</dt>
-                <dd className="tabular text-sm font-semibold">
-                  {data?.fleet_availability[status] ?? 0}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-
-        <section>
-          <SectionHeading title={t('nav.overview')} />
-          <ul className="mt-2 divide-y divide-border/60 border-y border-border/60">
-            {[
-              {
-                label: t('admin.activeManagers'),
-                value: totals?.managers ?? 0,
-                to: '/admin/managers',
-              },
-              {
-                label: t('admin.activeDrivers'),
-                value: totals?.drivers ?? 0,
-                to: '/fleet/drivers',
-              },
-              { label: t('admin.activeBuses'), value: totals?.buses ?? 0, to: '/fleet/buses' },
-              { label: t('admin.depots'), value: totals?.depots ?? 0, to: '/admin/depots' },
-              { label: t('admin.routes'), value: totals?.routes ?? 0, to: '/fleet/routes' },
-            ].map((metric) => (
-              <li key={metric.to}>
-                <Link
-                  to={metric.to}
-                  className="flex items-center justify-between gap-4 py-2.5 text-sm hover:text-primary"
-                >
-                  <span className="text-muted-foreground">{metric.label}</span>
-                  <span className="tabular font-semibold text-foreground">{metric.value}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </div>
+      <section className="max-w-xl">
+        <SectionHeading title={t('admin.fleetAvailability')} />
+        <dl className="mt-2 divide-y divide-border/60 border-y border-border/60">
+          {(['AVAILABLE', 'ON_TRIP', 'MAINTENANCE', 'OUT_OF_SERVICE'] as const).map((status) => (
+            <div key={status} className="flex items-center justify-between gap-4 py-2.5">
+              <dt className="text-sm text-muted-foreground">{t(`status.bus.${status}`)}</dt>
+              <dd className="tabular text-sm font-semibold">
+                {data?.fleet_availability[status] ?? 0}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
     </div>
   );
 }

@@ -48,6 +48,25 @@ export interface AnomalyFilters {
 
 const OPEN_STATUSES: AnomalyReviewStatus[] = ['OPEN', 'IN_REVIEW', 'NEEDS_INVESTIGATION'];
 
+/** Lightweight count for navigation badges; avoids loading alert detail rows. */
+export function useOpenAnomalyCount() {
+  const { identity } = useAuth();
+
+  return useQuery({
+    queryKey: ['anomalies', 'open-count'],
+    enabled: Boolean(identity),
+    staleTime: 60_000,
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from('anomalies')
+        .select('id', { count: 'exact', head: true })
+        .in('review_status', OPEN_STATUSES);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+}
+
 export function useAnomalies(filters: AnomalyFilters = {}) {
   const { identity } = useAuth();
 

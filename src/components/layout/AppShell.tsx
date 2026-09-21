@@ -9,6 +9,7 @@ import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 import { SkeletonList } from '@/components/ui/skeleton';
 import { useAuth } from '@/features/auth/session';
 import { useUnreadNotificationCount } from '@/features/notifications/api';
+import { useOpenAnomalyCount } from '@/features/anomalies/api';
 import { cn } from '@/lib/cn';
 
 /**
@@ -40,6 +41,7 @@ export function AppShell({
   const { t } = useTranslation();
   const { identity, isAdmin, can } = useAuth();
   const unread = useUnreadNotificationCount();
+  const openAlerts = useOpenAnomalyCount();
 
   return (
     <div className="min-h-dvh bg-background">
@@ -51,7 +53,12 @@ export function AppShell({
         {t('nav.skipToContent')}
       </a>
 
-      <DesktopSidebar isAdmin={isAdmin} can={can} organizationName={identity?.organizationName} />
+      <DesktopSidebar
+        isAdmin={isAdmin}
+        can={can}
+        organizationName={identity?.organizationName}
+        alertCount={openAlerts.data ?? 0}
+      />
 
       <div className="md:pl-64">
         <AppHeader

@@ -76,10 +76,12 @@ export function DesktopSidebar({
   isAdmin,
   can,
   organizationName,
+  alertCount,
 }: {
   isAdmin: boolean;
   can: (permission: Permission) => boolean;
   organizationName?: string;
+  alertCount?: number;
 }) {
   const { t } = useTranslation();
 
@@ -126,6 +128,14 @@ export function DesktopSidebar({
                     >
                       <item.icon className="size-[1.125rem] shrink-0" aria-hidden />
                       <span className="truncate">{t(item.labelKey)}</span>
+                      {item.to === '/alerts' && (alertCount ?? 0) > 0 && (
+                        <span
+                          className="tabular ml-auto min-w-5 rounded-full bg-warning px-1.5 py-0.5 text-center text-[0.6875rem] font-bold leading-none text-warning-foreground"
+                          aria-label={`${t('nav.alerts')}: ${alertCount}`}
+                        >
+                          {(alertCount ?? 0) > 99 ? '99+' : alertCount}
+                        </span>
+                      )}
                     </NavLink>
                   </li>
                 ))}
