@@ -18,7 +18,6 @@ import {
   ChoiceList,
   FlowSuccess,
   StepHeader,
-  StepProgress,
 } from '@/components/common/StepFlow';
 import { SearchInput } from '@/components/common/SearchInput';
 import { Button } from '@/components/ui/button';
@@ -61,8 +60,6 @@ type Stage =
   | { name: 'failure'; outcome: ScanOutcome }
   | { name: 'manual'; prefilledEmployeeId?: string }
   | { name: 'done'; employeeName: string; recordedAt: string };
-
-const TOTAL_STEPS = 3;
 
 export default function TakeAttendanceFlow() {
   const { t } = useTranslation();
@@ -263,15 +260,12 @@ export default function TakeAttendanceFlow() {
 
   return (
     <FlowShell title={t('attendance.title')} subtitle={depot.name} onClose={goBack}>
-      {stage.name !== 'done' && <StepProgress current={stepNumber(stage)} total={TOTAL_STEPS} />}
       {stage.name !== 'done' && answered}
 
       {/* --- Step 1: route --------------------------------------------- */}
       {stage.name === 'route' && (
         <>
           <StepHeader
-            current={1}
-            total={TOTAL_STEPS}
             prompt={t('attendance.stepRoute')}
             hint={t('attendance.stepRouteHint')}
           />
@@ -308,8 +302,6 @@ export default function TakeAttendanceFlow() {
       {stage.name === 'bus' && (
         <>
           <StepHeader
-            current={2}
-            total={TOTAL_STEPS}
             prompt={t('attendance.stepBus')}
             hint={t('attendance.stepBusHint', { depot: depot.name })}
           />
@@ -345,7 +337,7 @@ export default function TakeAttendanceFlow() {
       {/* --- Step 3: scan ---------------------------------------------- */}
       {stage.name === 'scan' && (
         <>
-          <StepHeader current={3} total={TOTAL_STEPS} prompt={t('attendance.stepScan')} />
+          <StepHeader prompt={t('attendance.stepScan')} />
 
           {candidates.isLoading ? (
             <SkeletonList count={2} />
@@ -454,17 +446,6 @@ export default function TakeAttendanceFlow() {
       )}
     </FlowShell>
   );
-}
-
-function stepNumber(stage: Stage): number {
-  switch (stage.name) {
-    case 'route':
-      return 1;
-    case 'bus':
-      return 2;
-    default:
-      return 3;
-  }
 }
 
 // ---------------------------------------------------------------------------

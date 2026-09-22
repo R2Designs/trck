@@ -22,8 +22,8 @@ import { cn } from '@/lib/cn';
 
 export interface StepHeaderProps {
   /** 1-based. */
-  current: number;
-  total: number;
+  current?: number;
+  total?: number;
   /** The question, phrased as a question. */
   prompt: string;
   /** One clarifying sentence, when the question needs it. */
@@ -35,10 +35,19 @@ export function StepHeader({ current, total, prompt, hint }: StepHeaderProps) {
 
   return (
     <div className="mb-4">
-      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-        {t('a11y.progressStep', { current, total })}
-      </p>
-      <h2 className="mt-1.5 text-xl font-bold leading-snug tracking-tight">{prompt}</h2>
+      {current != null && total != null && (
+        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          {t('a11y.progressStep', { current, total })}
+        </p>
+      )}
+      <h2
+        className={cn(
+          'text-xl font-bold leading-snug tracking-tight',
+          current != null && total != null && 'mt-1.5',
+        )}
+      >
+        {prompt}
+      </h2>
       {hint && <p className="mt-1.5 text-sm text-muted-foreground">{hint}</p>}
     </div>
   );
