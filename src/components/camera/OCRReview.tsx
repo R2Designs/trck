@@ -180,6 +180,9 @@ function ReadingRow({
             </div>
           )}
         </Field>
+        {notFound && reading.field === 'RANGE_KM' && (
+          <p className="text-xs text-muted-foreground">{t('ocr.rangeNotVisible')}</p>
+        )}
 
         {reading.ocrValue != null && reading.edited && (
           <p className="text-xs text-muted-foreground">

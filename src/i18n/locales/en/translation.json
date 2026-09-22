@@ -623,6 +623,7 @@
     "confirmAll": "Confirm readings",
     "engine": "Read by {{engine}}",
     "rangeCaveat": "Range is the bus's own estimate, not a fuel measurement.",
+    "rangeNotVisible": "If the dashboard does not show range, leave this blank.",
     "analogueNoticeTitle": "This bus has analogue dials",
     "analogueNoticeBody": "Enter the dial readings by hand."
   },

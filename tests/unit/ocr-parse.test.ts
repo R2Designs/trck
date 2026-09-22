@@ -5,7 +5,6 @@ import {
   parseDashboardWords,
   parseNumber,
   parseSevenSegmentOdometerWords,
-  parseSevenSegmentRangeWords,
 } from '@domain/ocr-parse.ts';
 import type { OcrWord } from '@domain/ocr-parse.ts';
 
@@ -111,6 +110,24 @@ describe('parseDashboardWords', () => {
     expect(result.missing).toContain('RANGE_KM');
   });
 
+  it('does not mistake average fuel economy for range', () => {
+    const result = parseDashboardWords([
+      word('ODO'),
+      word('4718.5', 0.9, 40),
+      word('km'),
+      word('TRIP'),
+      word('1368.9', 0.9, 25),
+      word('km'),
+      word('AFE'),
+      word('5.6', 0.9, 18),
+      word('km/l'),
+    ]);
+
+    expect(result.readings.find((reading) => reading.field === 'ODOMETER')?.value).toBe(4718.5);
+    expect(result.readings.find((reading) => reading.field === 'RANGE_KM')).toBeUndefined();
+    expect(result.missing).toContain('RANGE_KM');
+  });
+
   it('reassembles an odometer decimal split into adjacent OCR tokens', () => {
     const result = parseDashboardWords([
       word('ODO'),
@@ -173,24 +190,19 @@ describe('parseSevenSegmentOdometerWords', () => {
     ]);
     expect(result?.value).toBe(4718.5);
   });
-});
 
-describe('parseSevenSegmentRangeWords', () => {
-  it('reads an explicit decimal from the fixed range crop', () => {
-    expect(parseSevenSegmentRangeWords([word('5.6', 0)])?.value).toBe(5.6);
-  });
+  it('restores the decimal when a tight crop returns digits with trailing dots', () => {
+    const result = parseSevenSegmentOdometerWords([
+      { text: '47185..', confidence: 0, bbox: { x0: 4, y0: 3, x1: 190, y1: 58 } },
+    ]);
 
-  it('restores a decimal point omitted by the seven-segment model', () => {
-    expect(parseSevenSegmentRangeWords([word('54', 0)])?.value).toBe(5.4);
+    expect(result).toEqual({ value: 4718.5, sourceText: '47185..' });
   });
 });
 
 describe('dashboard range precision', () => {
   it('keeps the tenths digit from the fixed range display', () => {
-    const result = parseDashboardWords([
-      word('RANGE', 0.7),
-      word('5.6', 0.7),
-    ]);
+    const result = parseDashboardWords([word('RANGE', 0.7), word('5.6', 0.7)]);
 
     expect(result.readings.find((reading) => reading.field === 'RANGE_KM')?.value).toBe(5.6);
   });

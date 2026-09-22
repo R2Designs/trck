@@ -75,7 +75,7 @@ export function parseSevenSegmentOdometerWords(
   const positioned = cleaned
     .filter((item) => item.text !== '' && item.word.bbox)
     .sort((a, b) => (a.word.bbox?.x0 ?? 0) - (b.word.bbox?.x0 ?? 0));
-  const groups: typeof positioned[] = [];
+  const groups: (typeof positioned)[] = [];
   for (let start = 0; start < positioned.length; start += 1) {
     const group = [positioned[start] as (typeof positioned)[number]];
     for (let index = start + 1; index < positioned.length; index += 1) {
@@ -154,28 +154,6 @@ export function parseSevenSegmentOdometerWords(
     }
   }
 
-  return null;
-}
-
-/** Parses the fixed AFE/range display crop. Its decimal dot is frequently
- * omitted by OCR, so a two-to-four digit token is treated as tenths. */
-export function parseSevenSegmentRangeWords(
-  words: readonly OcrWord[],
-): { value: number; sourceText: string } | null {
-  for (const word of words) {
-    const cleaned = normaliseNumericToken(word.text).replace(/[^0-9.,]/g, '');
-    if (/^\d{1,3}[.,]\d$/.test(cleaned)) {
-      const value = parseNumber(cleaned);
-      if (value != null && value <= 1500) return { value, sourceText: word.text };
-    }
-  }
-  for (const word of words) {
-    const digits = normaliseNumericToken(word.text).replace(/\D/g, '');
-    if (/^\d{2,4}$/.test(digits)) {
-      const value = Number(`${digits.slice(0, -1)}.${digits.slice(-1)}`);
-      if (value <= 1500) return { value, sourceText: word.text };
-    }
-  }
   return null;
 }
 

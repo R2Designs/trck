@@ -2,10 +2,11 @@
 
 ## The problem
 
-A manager photographs a bus dashboard in a depot yard. The picture has: a
-seven-segment odometer at an angle, a range readout in a different font, a fuel
-bar, glare from the windscreen, and whatever the sun is doing. From that we need
-three numbers, and we need to know how much to trust each of them.
+A manager photographs a bus dashboard in a depot yard. The picture may contain
+a seven-segment odometer, a trip meter, average fuel economy (AFE), gauge ticks,
+a clock and — on some dashboards — a distance-to-empty/range readout. Glare and
+perspective make all of them harder to read. We need the odometer and range when
+range is actually displayed, and we need to know how much to trust each value.
 
 Generic OCR on that image returns a soup of tokens. The work is in the parsing,
 not the recognition.
@@ -66,8 +67,16 @@ the best, using:
   far above it, has its score hard-capped at 0.2, so **no amount of label or
   size bonus can rescue it**. An earlier version subtracted a fixed penalty, and
   a large, well-labelled impossible number still won.
+- **Range semantics.** A number becomes range only when OCR also sees an
+  explicit `RANGE`, `DTE`, `RNG`, `KM LEFT`, or `DISTANCE TO EMPTY` label. AFE,
+  trip-meter values and unlabelled gauge ticks are never promoted to range.
 - **Range constraints.** A fuel percentage outside 0–100 is not a fuel
   percentage.
+
+The specialised seven-segment pass reads only the upper-left ODO region. It
+runs two differently prepared crops and uses the bus's previous odometer to
+select a plausible consensus. It deliberately does not read the lower AFE area:
+AFE is kilometres per litre, not kilometres of remaining range.
 
 The parser returns readings _and_ an explicit `missing` list of fields it could
 not find. Absence is reported, never filled in — the UI asks the manager for

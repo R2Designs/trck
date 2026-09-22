@@ -107,7 +107,8 @@ async function decode(
  * pipeline without retaining the decoded bitmap. */
 export async function imageDimensions(source: Blob): Promise<{ width: number; height: number }> {
   const decoded = await decode(source);
-  if ('close' in decoded.bitmap && typeof decoded.bitmap.close === 'function') decoded.bitmap.close();
+  if ('close' in decoded.bitmap && typeof decoded.bitmap.close === 'function')
+    decoded.bitmap.close();
   return { width: decoded.width, height: decoded.height };
 }
 
@@ -231,8 +232,13 @@ export async function prepareImage(source: Blob, purpose: ImagePurpose): Promise
 
 export interface PreprocessOptions {
   grayscale?: boolean;
+  /** Stretch the useful luminance range to black and white. This is especially
+   * useful for a backlit LCD photographed through a dusty cover. */
+  autoContrast?: boolean;
   /** 1 = unchanged; 1.4–1.8 helps a washed-out cluster in daylight. */
   contrast?: number;
+  /** Convert the prepared image to black and white after contrast adjustment. */
+  threshold?: number;
   sharpen?: boolean;
   /** Fractional crop applied before anything else, e.g. the framing overlay. */
   crop?: { x: number; y: number; width: number; height: number };
@@ -286,6 +292,38 @@ export async function preprocessForOcr(
   const { data } = imageData;
   const contrast = options.contrast ?? 1;
   const intercept = 128 * (1 - contrast);
+  let low = 0;
+  let high = 255;
+
+  if (options.autoContrast) {
+    const histogram = new Uint32Array(256);
+    for (let i = 0; i < data.length; i += 4) {
+      const luma = Math.round(
+        0.299 * (data[i] as number) +
+          0.587 * (data[i + 1] as number) +
+          0.114 * (data[i + 2] as number),
+      );
+      histogram[luma] = (histogram[luma] ?? 0) + 1;
+    }
+    const pixelCount = data.length / 4;
+    const cutoff = pixelCount * 0.02;
+    let seen = 0;
+    for (let value = 0; value < 256; value += 1) {
+      seen += histogram[value] ?? 0;
+      if (seen >= cutoff) {
+        low = value;
+        break;
+      }
+    }
+    seen = 0;
+    for (let value = 255; value >= 0; value -= 1) {
+      seen += histogram[value] ?? 0;
+      if (seen >= cutoff) {
+        high = value;
+        break;
+      }
+    }
+  }
 
   for (let i = 0; i < data.length; i += 4) {
     let r = data[i] as number;
@@ -293,7 +331,10 @@ export async function preprocessForOcr(
     let b = data[i + 2] as number;
 
     if (options.grayscale !== false) {
-      const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+      let luma = 0.299 * r + 0.587 * g + 0.114 * b;
+      if (options.autoContrast && high > low) {
+        luma = ((luma - low) * 255) / (high - low);
+      }
       r = g = b = luma;
     }
     if (contrast !== 1) {
@@ -310,6 +351,17 @@ export async function preprocessForOcr(
 
   if (options.sharpen) {
     applyConvolution(context, canvas.width, canvas.height, [0, -1, 0, -1, 5, -1, 0, -1, 0]);
+  }
+
+  if (options.threshold != null) {
+    const thresholded = context.getImageData(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < thresholded.data.length; i += 4) {
+      const value = (thresholded.data[i] as number) >= options.threshold ? 255 : 0;
+      thresholded.data[i] = value;
+      thresholded.data[i + 1] = value;
+      thresholded.data[i + 2] = value;
+    }
+    context.putImageData(thresholded, 0, 0);
   }
 
   return canvasToBlob(canvas, 0.95);
