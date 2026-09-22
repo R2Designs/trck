@@ -37,7 +37,12 @@ import {
 } from 'date-fns';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/features/auth/session';
-import { useEmployee, useFaceEnrolmentStatus, useSetEmployeeActive } from '@/features/fleet/api';
+import {
+  useDriverAssignment,
+  useEmployee,
+  useFaceEnrolmentStatus,
+  useSetEmployeeActive,
+} from '@/features/fleet/api';
 import { useAttendance } from '@/features/attendance/api';
 import type { AttendanceWithRelations } from '@/features/attendance/api';
 import { useTrips } from '@/features/trips/api';
@@ -61,6 +66,7 @@ export default function EmployeeDetailPage() {
   const attendanceTo = format(endOfMonth(attendanceMonth), 'yyyy-MM-dd');
 
   const employee = useEmployee(employeeId);
+  const assignment = useDriverAssignment(employeeId);
   const faces = useFaceEnrolmentStatus(employeeId);
   const facePhotos = useMemo(() => faces.data?.photos ?? [], [faces.data?.photos]);
   const facePhotoUrls = useFacePhotoUrls(facePhotos);
@@ -203,6 +209,15 @@ export default function EmployeeDetailPage() {
             </CardHeader>
             <CardContent>
               <DetailList>
+                <DetailRow
+                  label={t('employees.usualRoute')}
+                  value={assignment.data?.route?.name ?? EMPTY_VALUE}
+                />
+                <DetailRow
+                  label={t('employees.usualBus')}
+                  value={assignment.data?.bus?.registration_number ?? EMPTY_VALUE}
+                  mono
+                />
                 <DetailRow label={t('employees.phone')} value={person.phone ?? EMPTY_VALUE} />
                 <DetailRow
                   label={t('employees.joiningDate')}

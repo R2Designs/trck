@@ -6,7 +6,6 @@ import {
   Bus as BusIcon,
   CheckCircle2,
   Route as RouteIcon,
-  UserCheck,
   UserSearch,
 } from 'lucide-react';
 import type { LivenessResult, OverrideReasonCode } from '@domain/types.ts';
@@ -38,10 +37,10 @@ import { FaceScanner } from '@/components/camera/FaceScanner';
 import type { ScanOutcome } from '@/components/camera/FaceScanner';
 import { BusStatusBadge } from '@/components/common/StatusBadge';
 import { useToast } from '@/components/ui/toast';
-import { formatConfidence, formatTime } from '@/lib/format';
+import { EMPTY_VALUE, formatConfidence, formatTime } from '@/lib/format';
 import { toAppError } from '@/lib/errors';
 import { useActiveDepot } from '@/features/auth/session';
-import { useBuses, useEmployees, useRoutes, useAssignedDrivers } from '@/features/fleet/api';
+import { useBuses, useDriverAssignments, useEmployees, useRoutes } from '@/features/fleet/api';
 import { useThresholds } from '@/features/settings/api';
 import { useFaceCandidates, useRecordAttendance, useTodayAttendance } from './api';
 import { trackEvent } from '@/providers/analytics';
@@ -49,10 +48,9 @@ import { trackEvent } from '@/providers/analytics';
 /**
  * Take attendance.
  *
- * Route → bus → scan, asked one question at a time. Every failure state the
- * scanner can produce has its own screen with a way forward, and the manual
- * path is never more than one tap away — a face scanner that has no fallback
- * becomes a reason not to record attendance at all.
+ * Scan first. The matched driver's saved route and bus are applied
+ * automatically; route and bus pickers are only used when today's assignment
+ * is different. Every failure state still has a direct manual fallback.
  */
 
 type Stage =
@@ -73,14 +71,15 @@ export default function TakeAttendanceFlow() {
   const depot = useActiveDepot();
   const { thresholds } = useThresholds();
 
-  const [stage, setStage] = useState<Stage>({ name: 'route' });
+  const [stage, setStage] = useState<Stage>({ name: 'scan' });
+  const [returnStage, setReturnStage] = useState<Stage | null>(null);
   const [routeId, setRouteId] = useState<string | null>(null);
   const [busId, setBusId] = useState<string | null>(null);
 
   const routes = useRoutes({ depotId: depot?.id ?? null });
   const buses = useBuses({ depotId: depot?.id ?? null });
   const drivers = useEmployees({ depotId: depot?.id ?? null, type: 'DRIVER', status: 'ACTIVE' });
-  const assigned = useAssignedDrivers({ depotId: depot?.id ?? null, routeId, busId });
+  const assignments = useDriverAssignments(depot?.id ?? null);
   const today = useTodayAttendance(depot?.id ?? null);
   const record = useRecordAttendance();
 
@@ -95,11 +94,6 @@ export default function TakeAttendanceFlow() {
   const selectedRoute = routes.data?.find((route) => route.id === routeId);
   const selectedBus = buses.data?.find((bus) => bus.id === busId);
 
-  const scheduledDriver = useMemo(() => {
-    const employeeId = assigned.data?.[0]?.employee_id;
-    return drivers.data?.find((driver) => driver.id === employeeId) ?? null;
-  }, [assigned.data, drivers.data]);
-
   const alreadyPresent = useMemo(
     () => new Set((today.data ?? []).map((row) => row.employee_id)),
     [today.data],
@@ -109,14 +103,17 @@ export default function TakeAttendanceFlow() {
   const goBack = () => {
     switch (stage.name) {
       case 'route':
-      case 'done':
-        close();
-        break;
       case 'bus':
-        setStage({ name: 'route' });
+        if (returnStage) {
+          setStage(returnStage);
+          setReturnStage(null);
+        } else {
+          setStage({ name: 'scan' });
+        }
         break;
       case 'scan':
-        setStage({ name: 'bus' });
+      case 'done':
+        close();
         break;
       case 'match':
       case 'failure':
@@ -139,12 +136,19 @@ export default function TakeAttendanceFlow() {
     reason?: string;
   }) => {
     if (!depot) return;
+    const savedAssignment = assignments.data?.find(
+      (assignment) => assignment.employee_id === params.employeeId,
+    );
+    const resolvedRouteId = routeId ?? savedAssignment?.route_id ?? null;
+    const resolvedBusId = busId ?? savedAssignment?.bus_id ?? null;
+    setRouteId(resolvedRouteId);
+    setBusId(resolvedBusId);
     try {
       const saved = await record.mutateAsync({
         employeeId: params.employeeId,
         depotId: depot.id,
-        routeId,
-        busId,
+        routeId: resolvedRouteId,
+        busId: resolvedBusId,
         method: params.method,
         faceScore: params.faceScore ?? null,
         faceThreshold: params.faceScore != null ? thresholds.faceReviewSimilarity : null,
@@ -178,6 +182,12 @@ export default function TakeAttendanceFlow() {
 
   const handleScan = (outcome: ScanOutcome) => {
     if (outcome.kind === 'MATCH') {
+      const employeeId = outcome.match.best?.employeeId;
+      const savedAssignment = assignments.data?.find(
+        (assignment) => assignment.employee_id === employeeId,
+      );
+      setRouteId(savedAssignment?.route_id ?? null);
+      setBusId(savedAssignment?.bus_id ?? null);
       trackEvent('attendance_scan_success', {
         decision: outcome.match.decision === 'AUTO_ACCEPT' ? 'AUTO_ACCEPT' : 'REVIEW',
         similarity_band: outcome.match.decision === 'AUTO_ACCEPT' ? 'high' : 'medium',
@@ -218,22 +228,34 @@ export default function TakeAttendanceFlow() {
   // --- Answered-so-far summary ---------------------------------------------
   const answered = (
     <div className="mb-4 space-y-2">
-      {selectedRoute && stage.name !== 'route' && (
+      {(selectedRoute || stage.name === 'match') && stage.name !== 'route' && (
         <AnsweredStep
           label={t('trips.routeLabel')}
-          value={selectedRoute.name}
+          value={selectedRoute?.name ?? EMPTY_VALUE}
           onEdit={
-            stage.name === 'bus' || stage.name === 'scan'
-              ? () => setStage({ name: 'route' })
+            stage.name === 'scan' || stage.name === 'match'
+              ? () => {
+                  setReturnStage(stage);
+                  setStage({ name: 'route' });
+                }
               : undefined
           }
         />
       )}
-      {selectedBus && stage.name !== 'route' && stage.name !== 'bus' && (
+      {(selectedBus || stage.name === 'match') &&
+        stage.name !== 'route' &&
+        stage.name !== 'bus' && (
         <AnsweredStep
           label={t('trips.busLabel')}
-          value={selectedBus.registration_number}
-          onEdit={stage.name === 'scan' ? () => setStage({ name: 'bus' }) : undefined}
+          value={selectedBus?.registration_number ?? EMPTY_VALUE}
+          onEdit={
+            stage.name === 'scan' || stage.name === 'match'
+              ? () => {
+                  setReturnStage(stage);
+                  setStage({ name: 'bus' });
+                }
+              : undefined
+          }
         />
       )}
     </div>
@@ -273,7 +295,8 @@ export default function TakeAttendanceFlow() {
                 selected={route.id === routeId}
                 onSelect={() => {
                   setRouteId(route.id);
-                  setStage({ name: 'bus' });
+                  setStage(returnStage ?? { name: 'scan' });
+                  setReturnStage(null);
                 }}
               />
             ))}
@@ -310,7 +333,8 @@ export default function TakeAttendanceFlow() {
                 disabledReason={t('errors.busOutOfService')}
                 onSelect={() => {
                   setBusId(bus.id);
-                  setStage({ name: 'scan' });
+                  setStage(returnStage ?? { name: 'scan' });
+                  setReturnStage(null);
                 }}
               />
             ))}
@@ -322,27 +346,6 @@ export default function TakeAttendanceFlow() {
       {stage.name === 'scan' && (
         <>
           <StepHeader current={3} total={TOTAL_STEPS} prompt={t('attendance.stepScan')} />
-
-          {scheduledDriver ? (
-            <Card className="mb-4">
-              <CardContent className="flex items-center gap-3 pt-4">
-                <UserCheck className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-                <div className="min-w-0">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    {t('attendance.scheduledDriver')}
-                  </p>
-                  <p className="truncate text-sm font-semibold">{scheduledDriver.full_name}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {t('attendance.scheduledDriverHint', { name: scheduledDriver.full_name })}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <p className="mb-4 text-sm text-muted-foreground">
-              {t('attendance.noScheduledDriver')}
-            </p>
-          )}
 
           {candidates.isLoading ? (
             <SkeletonList count={2} />
@@ -436,6 +439,8 @@ export default function TakeAttendanceFlow() {
               block
               onClick={() => {
                 void today.refetch();
+                setRouteId(null);
+                setBusId(null);
                 setStage({ name: 'scan' });
               }}
             >

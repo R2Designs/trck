@@ -4,6 +4,7 @@ import type {
   BusBaselineRow,
   BusRow,
   DepotRow,
+  DriverAssignmentRow,
   EmployeeRow,
   Insert,
   RouteRow,
@@ -369,6 +370,115 @@ export function useSaveEmployee() {
   });
 }
 
+export interface DriverAssignmentWithRelations extends DriverAssignmentRow {
+  bus: Pick<BusRow, 'id' | 'registration_number'> | null;
+  route: Pick<RouteRow, 'id' | 'name' | 'origin' | 'destination'> | null;
+}
+
+/** The driver's current usual route and bus, shown as part of their profile. */
+export function useDriverAssignment(employeeId?: string) {
+  return useQuery({
+    queryKey: ['driver-assignment', employeeId ?? ''],
+    enabled: Boolean(employeeId),
+    queryFn: async (): Promise<DriverAssignmentWithRelations | null> => {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from('driver_assignments')
+        .select(
+          '*, bus:buses(id, registration_number), route:routes(id, name, origin, destination)',
+        )
+        .eq('employee_id', employeeId as string)
+        .lte('effective_from', today)
+        .or(`effective_to.is.null,effective_to.gte.${today}`)
+        .order('effective_from', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as unknown as DriverAssignmentWithRelations | null;
+    },
+  });
+}
+
+/** All current assignments at a depot, used to apply defaults after face identification. */
+export function useDriverAssignments(depotId?: string | null) {
+  return useQuery({
+    queryKey: ['driver-assignments', 'current', depotId ?? ''],
+    enabled: Boolean(depotId),
+    queryFn: async (): Promise<DriverAssignmentRow[]> => {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from('driver_assignments')
+        .select('*')
+        .eq('depot_id', depotId as string)
+        .lte('effective_from', today)
+        .or(`effective_to.is.null,effective_to.gte.${today}`)
+        .order('effective_from', { ascending: false });
+      if (error) throw error;
+
+      // Keep the newest current assignment if old data contains overlaps.
+      const byDriver = new Map<string, DriverAssignmentRow>();
+      for (const assignment of data ?? []) {
+        if (!byDriver.has(assignment.employee_id)) byDriver.set(assignment.employee_id, assignment);
+      }
+      return [...byDriver.values()];
+    },
+  });
+}
+
+/** Save the assignment as profile data. Existing current rows are updated in place. */
+export function useSaveDriverAssignment() {
+  const queryClient = useQueryClient();
+  const { identity } = useAuth();
+
+  return useMutation({
+    mutationKey: ['driver-assignment.save'],
+    mutationFn: async ({
+      employeeId,
+      depotId,
+      routeId,
+      busId,
+    }: {
+      employeeId: string;
+      depotId: string;
+      routeId: string;
+      busId: string;
+    }) => {
+      if (!identity) throw new Error('Not authenticated');
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: current, error: currentError } = await supabase
+        .from('driver_assignments')
+        .select('id')
+        .eq('employee_id', employeeId)
+        .lte('effective_from', today)
+        .or(`effective_to.is.null,effective_to.gte.${today}`)
+        .order('effective_from', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (currentError) throw currentError;
+
+      const values = {
+        organization_id: identity.organizationId,
+        depot_id: depotId,
+        employee_id: employeeId,
+        route_id: routeId,
+        bus_id: busId,
+        effective_from: today,
+        effective_to: null,
+        created_by: identity.user.id,
+      };
+
+      const { error } = current
+        ? await supabase.from('driver_assignments').update(values).eq('id', current.id)
+        : await supabase.from('driver_assignments').insert(values);
+      if (error) throw error;
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['driver-assignment', variables.employeeId] });
+      void queryClient.invalidateQueries({ queryKey: ['driver-assignments'] });
+    },
+  });
+}
+
 /** Deactivation, never deletion — historical attendance must stay resolvable. */
 export function useSetEmployeeActive() {
   const queryClient = useQueryClient();
@@ -403,7 +513,10 @@ export function useAssignedDrivers(params: {
         .from('driver_assignments')
         .select('employee_id, bus_id, route_id')
         .eq('depot_id', params.depotId as string)
-        .lte('effective_from', new Date().toISOString().slice(0, 10));
+        .lte('effective_from', new Date().toISOString().slice(0, 10))
+        .or(
+          `effective_to.is.null,effective_to.gte.${new Date().toISOString().slice(0, 10)}`,
+        );
       if (params.routeId) query = query.eq('route_id', params.routeId);
       if (params.busId) query = query.eq('bus_id', params.busId);
       const { data, error } = await query;

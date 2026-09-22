@@ -1,11 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field, Input, Textarea } from '@/components/ui/input';
 import {
   Select,
@@ -21,7 +21,14 @@ import { employeeSchema } from '@/lib/validation';
 import type { EmployeeFormValues } from '@/lib/validation';
 import { toAppError } from '@/lib/errors';
 import { useActiveDepot, useAuth } from '@/features/auth/session';
-import { useEmployee, useSaveEmployee } from '@/features/fleet/api';
+import {
+  useBuses,
+  useDriverAssignment,
+  useEmployee,
+  useRoutes,
+  useSaveDriverAssignment,
+  useSaveEmployee,
+} from '@/features/fleet/api';
 import { EMPLOYEE_TYPES, EMPLOYMENT_STATUSES } from '@domain/types.ts';
 
 /**
@@ -42,8 +49,13 @@ export default function EmployeeFormPage() {
   const { identity } = useAuth();
 
   const existing = useEmployee(employeeId);
+  const assignment = useDriverAssignment(employeeId);
   const save = useSaveEmployee();
+  const saveAssignment = useSaveDriverAssignment();
   const isEditing = Boolean(employeeId);
+  const [routeId, setRouteId] = useState('');
+  const [busId, setBusId] = useState('');
+  const [assignmentTouched, setAssignmentTouched] = useState(false);
 
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
@@ -82,17 +94,37 @@ export default function EmployeeFormPage() {
     });
   }, [existing.data, form]);
 
+  useEffect(() => {
+    if (!assignment.data) return;
+    setRouteId(assignment.data.route_id ?? '');
+    setBusId(assignment.data.bus_id ?? '');
+  }, [assignment.data]);
+
   const error = (name: keyof EmployeeFormValues): string | undefined => {
     const message = form.formState.errors[name]?.message;
     return message ? t(message as string) : undefined;
   };
 
   const isDriver = form.watch('employee_type') === 'DRIVER';
+  const selectedDepotId = form.watch('depot_id');
+  const routes = useRoutes({ depotId: selectedDepotId || null });
+  const buses = useBuses({ depotId: selectedDepotId || null });
+  const missingAssignment = isDriver && (!routeId || !busId);
 
   const onSubmit = form.handleSubmit(async (raw) => {
     const values = employeeSchema.parse(raw);
+    setAssignmentTouched(true);
+    if (missingAssignment) return;
     try {
       const saved = await save.mutateAsync({ id: employeeId, values });
+      if (saved && saved.employee_type === 'DRIVER') {
+        await saveAssignment.mutateAsync({
+          employeeId: saved.id,
+          depotId: saved.depot_id,
+          routeId,
+          busId,
+        });
+      }
       toast({
         tone: 'success',
         title: t(isEditing ? 'employees.updated' : 'employees.created', { name: values.full_name }),
@@ -216,9 +248,11 @@ export default function EmployeeFormPage() {
               {(fieldProps) => (
                 <Select
                   value={form.watch('depot_id')}
-                  onValueChange={(value) =>
-                    form.setValue('depot_id', value, { shouldValidate: true })
-                  }
+                  onValueChange={(value) => {
+                    form.setValue('depot_id', value, { shouldValidate: true });
+                    setRouteId('');
+                    setBusId('');
+                  }}
                 >
                   <SelectTrigger
                     id={fieldProps.id}
@@ -251,6 +285,64 @@ export default function EmployeeFormPage() {
           </Field>
         </CardContent>
       </Card>
+
+      {isDriver && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('employees.usualAssignment')}</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {t('employees.usualAssignmentHint')}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                label={t('employees.usualRoute')}
+                error={assignmentTouched && !routeId ? t('validation.selectOne') : undefined}
+                required
+                requiredLabel={t('a11y.requiredField')}
+              >
+                {(fieldProps) => (
+                  <Select value={routeId} onValueChange={setRouteId}>
+                    <SelectTrigger id={fieldProps.id} invalid={assignmentTouched && !routeId}>
+                      <SelectValue placeholder={t('attendance.stepRoute')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {routes.data?.map((route) => (
+                        <SelectItem key={route.id} value={route.id}>
+                          {route.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </Field>
+
+              <Field
+                label={t('employees.usualBus')}
+                error={assignmentTouched && !busId ? t('validation.selectOne') : undefined}
+                required
+                requiredLabel={t('a11y.requiredField')}
+              >
+                {(fieldProps) => (
+                  <Select value={busId} onValueChange={setBusId}>
+                    <SelectTrigger id={fieldProps.id} invalid={assignmentTouched && !busId}>
+                      <SelectValue placeholder={t('attendance.stepBus')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {buses.data?.map((bus) => (
+                        <SelectItem key={bus.id} value={bus.id}>
+                          {bus.registration_number}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </Field>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="space-y-4 pt-4">
@@ -344,7 +436,7 @@ export default function EmployeeFormPage() {
           type="submit"
           size="lg"
           className="flex-1"
-          loading={form.formState.isSubmitting || save.isPending}
+          loading={form.formState.isSubmitting || save.isPending || saveAssignment.isPending}
           loadingLabel={t('actions.saving')}
         >
           {!isEditing && isDriver ? t('employees.saveAndAddPhotos') : t('actions.save')}
