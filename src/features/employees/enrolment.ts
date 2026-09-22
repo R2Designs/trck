@@ -85,6 +85,7 @@ export interface SaveEnrolmentInput {
   shots: readonly EnrolmentShot[];
   noticeVersion: string;
   photoRetentionDays: number;
+  replaceExisting?: boolean;
 }
 
 /**
@@ -108,6 +109,14 @@ export function useSaveEnrolment() {
 
       const provider = getFaceProvider();
       const storage = getStorageProvider();
+
+      if (input.replaceExisting) {
+        const replaced = await supabase.rpc('rpc_delete_biometric_data', {
+          p_employee_id: input.employeeId,
+          p_reason: 'Face photos retaken',
+        });
+        if (replaced.error) throw replaced.error;
+      }
 
       // The database deliberately keeps revoked consent records for audit, so
       // its uniqueness rule is a partial index (`where revoked_at is null`).

@@ -185,6 +185,7 @@ export default function FaceEnrolmentPage() {
         shots,
         noticeVersion: NOTICE_VERSION,
         photoRetentionDays: thresholds.photoRetentionDays,
+        replaceExisting: (status.data?.embeddingCount ?? 0) > 0,
       });
       toast({ tone: 'success', title: t('face.saved', { name: person.full_name }) });
       setStage('done');

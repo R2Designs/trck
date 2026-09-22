@@ -37,6 +37,7 @@ const EmployeeListPage = lazy(() => import('@/features/employees/EmployeeListPag
 const EmployeeDetailPage = lazy(() => import('@/features/employees/EmployeeDetailPage'));
 const EmployeeFormPage = lazy(() => import('@/features/employees/EmployeeFormPage'));
 const FaceEnrolmentPage = lazy(() => import('@/features/employees/FaceEnrolmentPage'));
+const FacePhotosPage = lazy(() => import('@/features/employees/FacePhotosPage'));
 
 const RouteListPage = lazy(() => import('@/features/routes/RouteListPage'));
 const RouteFormPage = lazy(() => import('@/features/routes/RouteFormPage'));
@@ -94,6 +95,7 @@ export function App() {
               <Route path="/fleet/drivers" element={<EmployeeListPage />} />
               <Route path="/fleet/drivers/new" element={<EmployeeFormPage />} />
               <Route path="/fleet/drivers/:employeeId" element={<EmployeeDetailPage />} />
+              <Route path="/fleet/drivers/:employeeId/photos" element={<FacePhotosPage />} />
               <Route path="/fleet/drivers/:employeeId/edit" element={<EmployeeFormPage />} />
             </Route>
             <Route element={<RequirePermission permission="route.view" />}>

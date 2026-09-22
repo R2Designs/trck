@@ -10,7 +10,6 @@ import {
   Route as RouteIcon,
   ScanFace,
   ShieldOff,
-  Trash2,
 } from 'lucide-react';
 import { PageHeader, DetailList, DetailRow } from '@/components/common/PageHeader';
 import { EntityCard } from '@/components/common/EntityCard';
@@ -18,7 +17,6 @@ import { Badge, EmploymentStatusBadge, TripStatusBadge } from '@/components/comm
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/controls';
 import { SkeletonList } from '@/components/ui/skeleton';
 import { EmptyState, ErrorState, NotFoundState } from '@/components/feedback/states';
 import { useToast } from '@/components/ui/toast';
@@ -43,7 +41,7 @@ import { useEmployee, useFaceEnrolmentStatus, useSetEmployeeActive } from '@/fea
 import { useAttendance } from '@/features/attendance/api';
 import type { AttendanceWithRelations } from '@/features/attendance/api';
 import { useTrips } from '@/features/trips/api';
-import { useDeleteBiometrics } from './enrolment';
+import { useFacePhotoUrls } from './face-photo-urls';
 
 /**
  * One driver.
@@ -64,6 +62,8 @@ export default function EmployeeDetailPage() {
 
   const employee = useEmployee(employeeId);
   const faces = useFaceEnrolmentStatus(employeeId);
+  const facePhotos = useMemo(() => faces.data?.photos ?? [], [faces.data?.photos]);
+  const facePhotoUrls = useFacePhotoUrls(facePhotos);
   const attendance = useAttendance({
     employeeId,
     from: attendanceFrom,
@@ -72,10 +72,8 @@ export default function EmployeeDetailPage() {
   });
   const trips = useTrips({ driverId: employeeId, limit: 20 });
   const setActive = useSetEmployeeActive();
-  const deleteBiometrics = useDeleteBiometrics();
 
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
-  const [confirmDeleteFaces, setConfirmDeleteFaces] = useState(false);
 
   if (employee.isLoading) return <SkeletonList count={4} />;
   if (employee.isError)
@@ -121,66 +119,89 @@ export default function EmployeeDetailPage() {
       </div>
 
       {person.employee_type === 'DRIVER' && (
-        <Card className={enrolled ? undefined : 'border-warning/50 bg-warning-muted/30'}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ScanFace className="size-4 text-muted-foreground" aria-hidden />
-              {t('employees.faceEnrolment')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {faces.isLoading ? (
-              <div className="skeleton h-5 w-40" />
-            ) : (
-              <p className="text-sm">
-                {enrolled
-                  ? t('employees.faceEnrolled', { count: faces.data?.embeddingCount ?? 0 })
-                  : t('employees.faceNotEnrolled')}
-              </p>
-            )}
-            {!enrolled && (
-              <p className="text-sm text-muted-foreground">{t('employees.faceEnrolmentPrompt')}</p>
-            )}
+        <div className="grid gap-4 lg:grid-cols-[minmax(18rem,0.75fr)_minmax(0,1.25fr)]">
+          {facePhotos.length > 0 ? (
+            <Link
+              to={`/fleet/drivers/${person.id}/photos`}
+              className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={t('employees.viewFacePhotos', { name: person.full_name })}
+            >
+              <Card className="h-full transition-colors group-hover:border-primary/50 group-hover:bg-primary-muted/10">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ScanFace className="size-4 text-primary" aria-hidden />
+                    {t('employees.faceEnrolment')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex min-h-24 items-center -space-x-3">
+                    {facePhotos.slice(0, 5).map((photo, index) => {
+                      const url = facePhotoUrls.get(photo.storage_path);
+                      return url ? (
+                        <img
+                          key={photo.id}
+                          src={url}
+                          alt=""
+                          className="size-16 rounded-full border-4 border-card object-cover shadow-sm sm:size-20"
+                          style={{ zIndex: facePhotos.length - index }}
+                        />
+                      ) : (
+                        <span
+                          key={photo.id}
+                          className="skeleton size-16 rounded-full border-4 border-card sm:size-20"
+                        />
+                      );
+                    })}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">
+                      {t('employees.savedPhotos', { count: facePhotos.length })}
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {t('employees.facePhotoHint')}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ) : (
+            <Card className="border-warning/50 bg-warning-muted/30">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ScanFace className="size-4 text-muted-foreground" aria-hidden />
+                  {t('employees.faceEnrolment')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {faces.isLoading ? (
+                  <div className="skeleton h-5 w-40" />
+                ) : (
+                  <p className="text-sm">
+                    {enrolled
+                      ? t('employees.faceEnrolled', { count: faces.data?.embeddingCount ?? 0 })
+                      : t('employees.faceNotEnrolled')}
+                  </p>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  {t('employees.faceEnrolmentPrompt')}
+                </p>
+                {can('employee.enrolFace') && (
+                  <Button asChild size="md">
+                    <Link to={`/fleet/drivers/${person.id}/faces`}>
+                      <ScanFace className="size-4" aria-hidden />
+                      {enrolled ? t('employees.retakePhotos') : t('face.enrolTitle')}
+                    </Link>
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-            <div className="flex flex-wrap gap-2">
-              {can('employee.enrolFace') && (
-                <Button asChild size="md" variant={enrolled ? 'outline' : 'primary'}>
-                  <Link to={`/fleet/drivers/${person.id}/faces`}>
-                    <ScanFace className="size-4" aria-hidden />
-                    {enrolled ? t('actions.add') : t('face.enrolTitle')}
-                  </Link>
-                </Button>
-              )}
-              {enrolled && can('employee.deleteBiometrics') && (
-                <Button size="md" variant="ghost" onClick={() => setConfirmDeleteFaces(true)}>
-                  <Trash2 className="size-4" aria-hidden />
-                  {t('actions.delete')}
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {person.employee_type === 'DRIVER' && (
-        <MonthlyAttendanceCalendar
-          month={attendanceMonth}
-          records={attendance.data ?? []}
-          loading={attendance.isLoading}
-          onPrevious={() => setAttendanceMonth((current) => subMonths(current, 1))}
-          onNext={() => setAttendanceMonth((current) => addMonths(current, 1))}
-        />
-      )}
-
-      <Tabs defaultValue="details">
-        <TabsList>
-          <TabsTrigger value="details">{t('employees.tabs.details')}</TabsTrigger>
-          <TabsTrigger value="trips">{t('employees.tabs.trips')}</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="details" className="space-y-4">
           <Card>
-            <CardContent className="pt-4">
+            <CardHeader>
+              <CardTitle>{t('employees.tabs.details')}</CardTitle>
+            </CardHeader>
+            <CardContent>
               <DetailList>
                 <DetailRow label={t('employees.phone')} value={person.phone ?? EMPTY_VALUE} />
                 <DetailRow
@@ -208,27 +229,56 @@ export default function EmployeeDetailPage() {
               </DetailList>
             </CardContent>
           </Card>
+        </div>
+      )}
 
-          {can('employee.deactivate') && (
-            <Card>
-              <CardContent className="pt-4">
-                <Button
-                  variant={person.employment_status === 'ACTIVE' ? 'outline' : 'primary'}
-                  size="lg"
-                  block
-                  onClick={() => setConfirmDeactivate(true)}
-                >
-                  <ShieldOff className="size-4" aria-hidden />
-                  {person.employment_status === 'ACTIVE'
-                    ? t('actions.deactivate')
-                    : t('actions.reactivate')}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+      {person.employee_type !== 'DRIVER' && (
+        <Card>
+          <CardContent className="pt-4">
+            <DetailList>
+              <DetailRow label={t('employees.phone')} value={person.phone ?? EMPTY_VALUE} />
+              <DetailRow
+                label={t('employees.joiningDate')}
+                value={person.joining_date ? formatDate(person.joining_date) : EMPTY_VALUE}
+              />
+              <DetailRow
+                label={t('employees.licenceNumber')}
+                value={person.licence_number ?? EMPTY_VALUE}
+                mono
+              />
+              <DetailRow
+                label={t('employees.licenceExpiry')}
+                value={person.licence_expiry ? formatDate(person.licence_expiry) : EMPTY_VALUE}
+              />
+              <DetailRow
+                label={t('employees.emergencyContactName')}
+                value={person.emergency_contact_name ?? EMPTY_VALUE}
+              />
+              <DetailRow
+                label={t('employees.emergencyContactPhone')}
+                value={person.emergency_contact_phone ?? EMPTY_VALUE}
+              />
+              {person.notes && <DetailRow label={t('employees.notes')} value={person.notes} />}
+            </DetailList>
+          </CardContent>
+        </Card>
+      )}
 
-        <TabsContent value="trips" className="space-y-3">
+      {person.employee_type === 'DRIVER' && (
+        <MonthlyAttendanceCalendar
+          month={attendanceMonth}
+          records={attendance.data ?? []}
+          loading={attendance.isLoading}
+          onPrevious={() => setAttendanceMonth((current) => subMonths(current, 1))}
+          onNext={() => setAttendanceMonth((current) => addMonths(current, 1))}
+        />
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('employees.tabs.trips')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
           {trips.isLoading && <SkeletonList count={3} />}
           {!trips.isLoading && (trips.data?.length ?? 0) === 0 && (
             <EmptyState
@@ -250,8 +300,26 @@ export default function EmployeeDetailPage() {
               </li>
             ))}
           </ul>
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
+
+      {can('employee.deactivate') && (
+        <Card>
+          <CardContent className="pt-4">
+            <Button
+              variant={person.employment_status === 'ACTIVE' ? 'outline' : 'primary'}
+              size="lg"
+              block
+              onClick={() => setConfirmDeactivate(true)}
+            >
+              <ShieldOff className="size-4" aria-hidden />
+              {person.employment_status === 'ACTIVE'
+                ? t('actions.deactivate')
+                : t('actions.reactivate')}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <ConfirmDialog
         open={confirmDeactivate}
@@ -284,27 +352,6 @@ export default function EmployeeDetailPage() {
         }}
       />
 
-      <ConfirmDialog
-        open={confirmDeleteFaces}
-        onOpenChange={setConfirmDeleteFaces}
-        tone="destructive"
-        title={t('face.deleteTitle', { name: person.full_name })}
-        description={t('face.deleteBody')}
-        requireReason
-        reasonLabel={t('face.deleteReason')}
-        minReasonLength={5}
-        loading={deleteBiometrics.isPending}
-        onConfirm={async (reason) => {
-          try {
-            await deleteBiometrics.mutateAsync({ employeeId: person.id, reason: reason ?? '' });
-            toast({ tone: 'success', title: t('face.deleted', { name: person.full_name }) });
-            setConfirmDeleteFaces(false);
-          } catch (caught) {
-            const appError = toAppError(caught);
-            toast({ tone: 'error', title: t(appError.messageKey, appError.messageParams) });
-          }
-        }}
-      />
     </div>
   );
 }
