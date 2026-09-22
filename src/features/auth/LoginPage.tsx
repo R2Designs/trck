@@ -13,7 +13,6 @@ import { ErrorState } from '@/components/feedback/states';
 import { useAuth } from './session';
 import { changeLanguage } from '@/i18n';
 import { toAppError } from '@/lib/errors';
-import { config } from '@/app/config';
 
 const schema = z.object({
   email: z.string().min(1, 'validation.required').email('validation.email'),
@@ -165,23 +164,6 @@ export function LoginPage() {
           </div>
         </form>
 
-        {config.showDemoCredentials && (
-          <div className="mt-8 rounded-xl border border-dashed border-border bg-muted/40 p-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-              {t('auth.demoCredentials')}
-            </p>
-            <dl className="mt-2 space-y-1 text-xs text-muted-foreground">
-              <div className="flex justify-between gap-3">
-                <dt>admin@trck.app</dt>
-                <dd className="font-mono">Admin@12345</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt>arun@trck.app</dt>
-                <dd className="font-mono">Manager@12345</dd>
-              </div>
-            </dl>
-          </div>
-        )}
       </main>
     </div>
   );

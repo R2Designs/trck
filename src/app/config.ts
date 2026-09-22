@@ -35,7 +35,6 @@ export interface AppConfig {
   analytics: { provider: AnalyticsProviderName };
   env: 'development' | 'test' | 'staging' | 'production';
   enablePwa: boolean;
-  showDemoCredentials: boolean;
   appVersion: string;
   /** Lowest level `logger` will emit. `silent` turns logging off entirely. */
   logLevel: LogThreshold;
@@ -124,7 +123,6 @@ export const config: AppConfig = Object.freeze({
     raw.MODE === 'production' ? 'warn' : 'debug',
   ),
   enablePwa: raw.VITE_ENABLE_PWA !== 'false',
-  showDemoCredentials: raw.VITE_SHOW_DEMO_CREDENTIALS === 'true',
   appVersion: raw.VITE_APP_VERSION?.trim() || '1.0.0',
 }) satisfies AppConfig;
 

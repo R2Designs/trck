@@ -224,7 +224,6 @@
     "noAccessBody": "अपने एडमिन से खाता चालू करने को कहें।",
     "deactivatedTitle": "खाता बंद है",
     "deactivatedBody": "यह खाता बंद कर दिया गया है। अपने एडमिन से बात करें।",
-    "demoCredentials": "डेमो साइन-इन",
     "signedOut": "आप साइन आउट हो गए हैं।"
   },
   "home": {

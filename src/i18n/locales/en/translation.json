@@ -224,7 +224,6 @@
     "noAccessBody": "Your account isn't linked to an organisation yet. Ask your administrator to finish setting it up.",
     "deactivatedTitle": "Account deactivated",
     "deactivatedBody": "This account has been deactivated. Contact your administrator if you think that's a mistake.",
-    "demoCredentials": "Demo sign-ins",
     "signedOut": "You've been signed out."
   },
   "home": {
