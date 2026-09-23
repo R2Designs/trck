@@ -24,7 +24,7 @@ describe('chooseSevenSegmentOdometer', () => {
     ).toBe(4718.5);
   });
 
-  it('returns no reading when every candidate moves the odometer backwards', () => {
+  it('keeps the best readable value when every candidate moves backwards', () => {
     expect(
       chooseSevenSegmentOdometer(
         [
@@ -32,7 +32,7 @@ describe('chooseSevenSegmentOdometer', () => {
           { value: 1368.9, sourceText: '1368.9' },
         ],
         54_600,
-      ),
-    ).toBeNull();
+      )?.value,
+    ).toBe(4718.5);
   });
 });

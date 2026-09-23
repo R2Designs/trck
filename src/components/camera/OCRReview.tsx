@@ -3,7 +3,6 @@ import { AlertTriangle, Camera, Check, Copy, Pencil } from 'lucide-react';
 import type { ReadingField } from '@domain/types.ts';
 import { ConfidenceBadge } from '@/components/common/StatusBadge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Field, Input } from '@/components/ui/input';
 import { cn } from '@/lib/cn';
 import type { CaptureDraft, ReviewableReading } from '@/features/trips/capture';
@@ -53,7 +52,7 @@ export function OCRReview({
         <img
           src={draft.image.previewUrl}
           alt={t('capture.title')}
-          className="max-h-64 w-full object-contain"
+          className="max-h-56 w-full object-contain sm:max-h-64"
         />
       </div>
 
@@ -77,30 +76,13 @@ export function OCRReview({
         </div>
       )}
 
-      {!analogue && draft.status === 'FAILED' && (
-        <div className="rounded-xl border-2 border-warning/40 bg-warning-muted p-3">
-          <p className="text-sm font-semibold">{t('capture.failedTitle')}</p>
-          <p className="mt-0.5 text-sm text-muted-foreground">{t('capture.failedBody')}</p>
-        </div>
-      )}
+      <h2 className="text-base font-bold">{t('ocr.resultTitle')}</h2>
 
-      <div>
-        <h2 className="text-base font-bold">{t('ocr.resultTitle')}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t('ocr.resultSubtitle')}</p>
-      </div>
-
-      <div className="space-y-3">
+      <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
         {draft.readings.map((reading) => (
           <ReadingRow key={reading.field} reading={reading} onChange={onChange} />
         ))}
       </div>
-
-      <p className="text-xs text-muted-foreground">{t('ocr.rangeCaveat')}</p>
-      {!analogue && draft.status !== 'FAILED' && (
-        <p className="text-xs text-muted-foreground">
-          {t('ocr.engine', { engine: `${draft.engine} ${draft.engineVersion}` })}
-        </p>
-      )}
 
       <div className="sticky-cta flex gap-2">
         <Button type="button" variant="outline" size="lg" onClick={onRetake}>
@@ -136,67 +118,60 @@ function ReadingRow({
   const unitKey = UNIT_KEY[reading.field];
 
   return (
-    <Card
+    <div
       className={cn(
-        lowConfidence && !reading.edited && 'border-warning/50 bg-warning-muted/40',
-        reading.edited && 'border-primary/40',
+        'space-y-2 p-3 sm:p-4',
+        lowConfidence && !reading.edited && 'bg-warning-muted/35',
+        reading.edited && 'bg-primary/5',
       )}
     >
-      <CardContent className="space-y-2 pt-4">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-semibold">{t(`ocr.fields.${reading.field}`)}</span>
-          {reading.band && !reading.edited && <ConfidenceBadge band={reading.band} />}
-          {reading.edited && (
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
-              <Pencil className="size-3" aria-hidden />
-              {t('ocr.corrected')}
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold">{t(`ocr.fields.${reading.field}`)}</span>
+        {reading.band && !reading.edited && <ConfidenceBadge band={reading.band} />}
+        {reading.edited && (
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
+            <Pencil className="size-3" aria-hidden />
+            {t('ocr.corrected')}
+          </span>
+        )}
+      </div>
+
+      <Field
+        label={notFound ? t('ocr.enterValue') : t(`ocr.fields.${reading.field}`)}
+        className="[&>label]:sr-only"
+      >
+        {(fieldProps) => (
+          <div className="relative">
+            <Input
+              {...fieldProps}
+              inputMode="decimal"
+              value={reading.value}
+              onChange={(event) => onChange(reading.field, event.target.value)}
+              placeholder={notFound ? t('ocr.notFound') : undefined}
+              className={cn('h-12 tabular text-base font-semibold', unitKey && 'pr-14')}
+            />
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+              {unitKey ? t(unitKey) : '%'}
             </span>
-          )}
-        </div>
-
-        <Field
-          label={notFound ? t('ocr.enterValue') : t(`ocr.fields.${reading.field}`)}
-          className="[&>label]:sr-only"
-        >
-          {(fieldProps) => (
-            <div className="relative">
-              <Input
-                {...fieldProps}
-                inputMode="decimal"
-                value={reading.value}
-                onChange={(event) => onChange(reading.field, event.target.value)}
-                placeholder={notFound ? t('ocr.notFound') : undefined}
-                className={cn('tabular text-lg font-semibold', unitKey && 'pr-14')}
-              />
-              {unitKey ? (
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                  {t(unitKey)}
-                </span>
-              ) : (
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                  %
-                </span>
-              )}
-            </div>
-          )}
-        </Field>
-        {notFound && reading.field === 'RANGE_KM' && (
-          <p className="text-xs text-muted-foreground">{t('ocr.rangeNotVisible')}</p>
+          </div>
         )}
+      </Field>
+      {notFound && reading.field === 'RANGE_KM' && (
+        <p className="text-xs text-muted-foreground">{t('ocr.rangeNotVisible')}</p>
+      )}
 
-        {reading.ocrValue != null && reading.edited && (
-          <p className="text-xs text-muted-foreground">
-            {t('ocr.originalValue', { value: reading.ocrValue })}
-          </p>
-        )}
+      {reading.ocrValue != null && reading.edited && (
+        <p className="text-xs text-muted-foreground">
+          {t('ocr.originalValue', { value: reading.ocrValue })}
+        </p>
+      )}
 
-        {lowConfidence && !reading.edited && (
-          <p className="flex items-start gap-1.5 text-xs font-medium text-warning">
-            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-            {t('ocr.lowConfidenceWarning')}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+      {lowConfidence && !reading.edited && (
+        <p className="flex items-start gap-1.5 text-xs font-medium text-warning">
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+          {t('ocr.lowConfidenceWarning')}
+        </p>
+      )}
+    </div>
   );
 }

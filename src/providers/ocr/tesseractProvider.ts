@@ -105,7 +105,10 @@ export function chooseSevenSegmentOdometer(
     .sort((a, b) => b.score - a.score);
 
   const winner = ranked[0];
-  if (!winner || winner.score < 0) return null;
+  // History influences which candidate wins, but it must never erase digits
+  // that were actually readable. The domain parser will cap an odometer that
+  // moves backwards to LOW confidence so the manager can correct it.
+  if (!winner) return null;
   return { value: winner.value, sourceText: winner.sourceText };
 }
 
@@ -118,8 +121,13 @@ async function readSevenSegmentOdometer(
   // excluding TRIP, AFE, the clock and gauge markings prevents a plausible but
   // semantically wrong number from winning.
   const crops = [
-    { x: 0.29, y: 0.1, width: 0.27, height: 0.25 },
-    { x: 0.31, y: 0.13, width: 0.23, height: 0.2 },
+    // Tight readout crop. Keeping the ODO label, divider line and gauges out
+    // of this pass matters more than applying a harsher threshold: those
+    // shapes otherwise get joined to the seven-segment digits on tilted
+    // photos.
+    { x: 0.3, y: 0.24, width: 0.2, height: 0.18 },
+    // A little wider/taller for cameras whose preview framing differs.
+    { x: 0.3, y: 0.21, width: 0.29, height: 0.2 },
   ];
 
   const tesseract = await import('tesseract.js');
@@ -142,9 +150,12 @@ async function readSevenSegmentOdometer(
     const prepared = await Promise.all([
       preprocessForOcr(image, {
         grayscale: true,
+        crop: crops[0],
+        scale: 3,
+      }),
+      preprocessForOcr(image, {
+        grayscale: true,
         autoContrast: true,
-        contrast: 1.1,
-        sharpen: true,
         crop: crops[0],
         scale: 3,
       }),
@@ -154,14 +165,6 @@ async function readSevenSegmentOdometer(
         threshold: 180,
         sharpen: true,
         crop: crops[1],
-        scale: 3,
-      }),
-      preprocessForOcr(image, {
-        grayscale: true,
-        autoContrast: true,
-        threshold: 220,
-        sharpen: true,
-        crop: crops[0],
         scale: 3,
       }),
     ]);
