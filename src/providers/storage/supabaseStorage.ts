@@ -28,11 +28,25 @@ export const supabaseStorageProvider: StorageProvider = {
 
   async upload(request: UploadRequest): Promise<UploadResult> {
     const bucket = BUCKETS[request.bucket];
-    const { error } = await supabase.storage.from(bucket).upload(request.path, request.body, {
-      contentType: request.contentType,
-      upsert: request.upsert ?? false,
-      cacheControl: 'private, max-age=0, no-store',
-    });
+    const upload = () =>
+      supabase.storage.from(bucket).upload(request.path, request.body, {
+        contentType: request.contentType,
+        upsert: request.upsert ?? false,
+        // storage-js expects a max-age value here, not a complete HTTP
+        // Cache-Control directive. The bucket is private regardless.
+        cacheControl: '0',
+      });
+
+    let { error } = await upload();
+    if (error) {
+      // A manager can keep the camera flow open long enough for the access
+      // token to expire. Refresh once and retry the identical UUID path before
+      // showing a failure; a genuinely denied upload still fails normally.
+      const refreshed = await supabase.auth.refreshSession();
+      if (!refreshed.error && refreshed.data.session) {
+        ({ error } = await upload());
+      }
+    }
 
     if (error) {
       throw new AppError(error.message, {

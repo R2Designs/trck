@@ -611,7 +611,7 @@
     "resultSubtitle": "Compare these numbers with the dashboard. Fix any wrong number.",
     "fields": {
       "ODOMETER": "Odometer",
-      "RANGE_KM": "Range",
+      "RANGE_KM": "AFE",
       "FUEL_PERCENT": "Fuel",
       "TRIP_METER": "Trip meter"
     },
@@ -622,8 +622,8 @@
     "originalValue": "We read: {{value}}",
     "confirmAll": "Confirm readings",
     "engine": "Read by {{engine}}",
-    "rangeCaveat": "Range is the bus's own estimate, not a fuel measurement.",
-    "rangeNotVisible": "No range shown? Leave blank.",
+    "rangeCaveat": "AFE is the average fuel efficiency shown by the bus.",
+    "rangeNotVisible": "No AFE shown? Leave blank.",
     "analogueNoticeTitle": "This bus has analogue dials",
     "analogueNoticeBody": "Enter the dial readings by hand."
   },

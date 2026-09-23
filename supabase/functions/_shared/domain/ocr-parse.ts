@@ -184,7 +184,10 @@ const DIGIT_CONFUSIONS: Record<string, string> = {
 };
 
 const ODOMETER_LABELS = ['odo', 'odometer', 'total', 'km total'];
-const RANGE_LABELS = ['range', 'dte', 'distance to empty', 'rng', 'km left'];
+// This fleet's dashboard exposes average fuel efficiency (AFE), not distance
+// to empty. The persisted field name remains RANGE_KM for compatibility with
+// the deployed schema, but its product meaning is AFE in km/L.
+const AFE_LABELS = ['afe', 'average fuel efficiency', 'km/l', 'kmpl'];
 const FUEL_LABELS = ['fuel', 'ful', 'tank', 'level'];
 const TRIP_LABELS = ['trip', 'tripa', 'trip a', 'trip b', 'tr1', 'tr2'];
 
@@ -232,12 +235,12 @@ function areaOf(word: OcrWord): number {
 }
 
 /**
- * Extracts odometer, range and fuel percentage from a bag of OCR words.
+ * Extracts odometer, AFE and fuel percentage from a bag of OCR words.
  *
  * Strategy, in order:
  *   1. A value sitting next to its own label wins outright.
  *   2. Otherwise the shape of the number decides: 4–7 digits is an odometer,
- *      1–3 digits next to "km" is a range, 0–100 before "%" is a fuel level.
+ *      a decimal next to "AFE" is km/L, 0–100 before "%" is a fuel level.
  *   3. Odometer candidates are scored against the previous known reading —
  *      buses do not lose kilometres, and they rarely gain thousands in a day.
  */
@@ -304,7 +307,9 @@ export function parseDashboardWords(
     (c) =>
       c.value >= 0 &&
       c.value <= 100 &&
-      (/%/.test(c.text) || labelledNearby(words, c.index, FUEL_LABELS)),
+      (/%/.test(c.text) ||
+        (labelledNearby(words, c.index, FUEL_LABELS) &&
+          !labelledNearby(words, c.index, AFE_LABELS))),
   );
   const fuel = fuelCandidates.sort((a, b) => b.confidence - a.confidence)[0];
   if (fuel) {
@@ -360,17 +365,17 @@ export function parseDashboardWords(
     });
   }
 
-  // --- Range ----------------------------------------------------------------
+  // --- Average fuel efficiency (AFE) -----------------------------------------
   const odometerIndex = odometer?.index;
-  const rangeCandidates = numeric
+  const afeCandidates = numeric
     .filter((c) => c.index !== odometerIndex)
     .filter((c) => c.value >= 0 && c.value <= 1500)
     // A bare number on a dashboard is commonly a speedometer/tachometer tick.
     // Require semantic evidence rather than presenting a confident invention.
-    .filter((c) => labelledNearby(words, c.index, RANGE_LABELS))
+    .filter((c) => labelledNearby(words, c.index, AFE_LABELS))
     .map((c) => {
       let score = c.confidence * 0.8;
-      if (labelledNearby(words, c.index, RANGE_LABELS)) score += 0.35;
+      if (labelledNearby(words, c.index, AFE_LABELS)) score += 0.35;
       const digits = Math.floor(Math.abs(c.value)).toString().length;
       if (digits >= 4) score -= 0.4;
       if (/%/.test(c.text)) score -= 0.5;
@@ -379,15 +384,15 @@ export function parseDashboardWords(
     .filter((c) => c.score > 0.25)
     .sort((a, b) => b.score - a.score);
 
-  const range = rangeCandidates[0];
-  if (range) {
-    const confidence = Math.min(1, Math.max(0, range.score));
+  const afe = afeCandidates[0];
+  if (afe) {
+    const confidence = Math.min(1, Math.max(0, afe.score));
     readings.push({
       field: 'RANGE_KM',
-      value: Math.round(range.value * 10) / 10,
+      value: Math.round(afe.value * 10) / 10,
       confidence,
       band: confidenceBand(confidence, thresholds),
-      sourceText: range.text,
+      sourceText: afe.text,
     });
   }
 

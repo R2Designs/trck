@@ -22,7 +22,7 @@ import type { CaptureDraft, ReviewableReading } from '@/features/trips/capture';
 
 const UNIT_KEY: Record<ReadingField, string> = {
   ODOMETER: 'units.km',
-  RANGE_KM: 'units.km',
+  RANGE_KM: 'units.kmpl',
   FUEL_PERCENT: '',
   TRIP_METER: 'units.km',
 };
@@ -156,10 +156,6 @@ function ReadingRow({
           </div>
         )}
       </Field>
-      {notFound && reading.field === 'RANGE_KM' && (
-        <p className="text-xs text-muted-foreground">{t('ocr.rangeNotVisible')}</p>
-      )}
-
       {reading.ocrValue != null && reading.edited && (
         <p className="text-xs text-muted-foreground">
           {t('ocr.originalValue', { value: reading.ocrValue })}

@@ -36,21 +36,21 @@ describe('numeric normalisation', () => {
 });
 
 describe('parseDashboardWords', () => {
-  it('extracts odometer, range and fuel from a labelled digital cluster', () => {
+  it('extracts odometer, AFE and fuel from a labelled digital cluster', () => {
     const result = parseDashboardWords([
       word('ODO'),
       word('86,542', 0.92, 40),
       word('km'),
-      word('RANGE'),
-      word('312', 0.88, 12),
-      word('km'),
+      word('AFE'),
+      word('5.6', 0.88, 12),
+      word('km/l'),
       word('FUEL'),
       word('63%', 0.9, 10),
     ]);
 
     const byField = Object.fromEntries(result.readings.map((r) => [r.field, r]));
     expect(byField.ODOMETER?.value).toBe(86542);
-    expect(byField.RANGE_KM?.value).toBe(312);
+    expect(byField.RANGE_KM?.value).toBe(5.6);
     expect(byField.FUEL_PERCENT?.value).toBe(63);
     expect(result.missing).toHaveLength(0);
   });
@@ -59,13 +59,13 @@ describe('parseDashboardWords', () => {
     const result = parseDashboardWords([
       word('ODO'),
       word('86542', 0.95, 40),
-      word('RANGE'),
-      word('312', 0.3, 8),
+      word('AFE'),
+      word('5.6', 0.3, 8),
     ]);
     const odo = result.readings.find((r) => r.field === 'ODOMETER');
-    const range = result.readings.find((r) => r.field === 'RANGE_KM');
+    const afe = result.readings.find((r) => r.field === 'RANGE_KM');
     expect(odo?.band).toBe('HIGH');
-    expect(range?.band).toBe('LOW');
+    expect(afe?.band).toBe('LOW');
   });
 
   it('uses the previous odometer to choose between similar candidates', () => {
@@ -98,7 +98,7 @@ describe('parseDashboardWords', () => {
     expect(result.readings.some((r) => r.field === 'FUEL_PERCENT')).toBe(false);
   });
 
-  it('does not mistake an unlabelled gauge tick for range', () => {
+  it('does not mistake an unlabelled gauge tick for AFE', () => {
     const result = parseDashboardWords([
       word('35', 0.94, 20),
       word('40', 0.92, 20),
@@ -110,7 +110,7 @@ describe('parseDashboardWords', () => {
     expect(result.missing).toContain('RANGE_KM');
   });
 
-  it('does not mistake average fuel economy for range', () => {
+  it('reads average fuel economy as AFE', () => {
     const result = parseDashboardWords([
       word('ODO'),
       word('4718.5', 0.9, 40),
@@ -124,8 +124,8 @@ describe('parseDashboardWords', () => {
     ]);
 
     expect(result.readings.find((reading) => reading.field === 'ODOMETER')?.value).toBe(4718.5);
-    expect(result.readings.find((reading) => reading.field === 'RANGE_KM')).toBeUndefined();
-    expect(result.missing).toContain('RANGE_KM');
+    expect(result.readings.find((reading) => reading.field === 'RANGE_KM')?.value).toBe(5.6);
+    expect(result.missing).not.toContain('RANGE_KM');
   });
 
   it('reassembles an odometer decimal split into adjacent OCR tokens', () => {
@@ -145,12 +145,12 @@ describe('parseDashboardWords', () => {
   });
 
   it('accepts a flat string from engines that do not return words', () => {
-    const result = parseDashboardText('ODO 186420 km RANGE 275 km FUEL 58%', 0.9, {
+    const result = parseDashboardText('ODO 186420 km AFE 5.4 km/l FUEL 58%', 0.9, {
       previousOdometerKm: 186_000,
     });
     const byField = Object.fromEntries(result.readings.map((r) => [r.field, r.value]));
     expect(byField.ODOMETER).toBe(186420);
-    expect(byField.RANGE_KM).toBe(275);
+    expect(byField.RANGE_KM).toBe(5.4);
     expect(byField.FUEL_PERCENT).toBe(58);
   });
 
@@ -200,9 +200,9 @@ describe('parseSevenSegmentOdometerWords', () => {
   });
 });
 
-describe('dashboard range precision', () => {
-  it('keeps the tenths digit from the fixed range display', () => {
-    const result = parseDashboardWords([word('RANGE', 0.7), word('5.6', 0.7)]);
+describe('dashboard AFE precision', () => {
+  it('keeps the tenths digit from the fixed AFE display', () => {
+    const result = parseDashboardWords([word('AFE', 0.7), word('5.6', 0.7)]);
 
     expect(result.readings.find((reading) => reading.field === 'RANGE_KM')?.value).toBe(5.6);
   });

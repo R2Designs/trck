@@ -611,7 +611,7 @@
     "resultSubtitle": "इन नंबरों को डैशबोर्ड से मिलाएँ। गलत नंबर बदलें।",
     "fields": {
       "ODOMETER": "ओडोमीटर",
-      "RANGE_KM": "रेंज",
+      "RANGE_KM": "AFE",
       "FUEL_PERCENT": "ईंधन",
       "TRIP_METER": "ट्रिप मीटर"
     },
@@ -622,8 +622,8 @@
     "originalValue": "हमने पढ़ा: {{value}}",
     "confirmAll": "रीडिंग पक्की करें",
     "engine": "पढ़ें {{engine}}",
-    "rangeCaveat": "रेंज बस का अनुमान है। यह ईंधन की सही मात्रा नहीं है।",
-    "rangeNotVisible": "रेंज नहीं दिखी? खाली छोड़ें।",
+    "rangeCaveat": "AFE बस की औसत ईंधन क्षमता है।",
+    "rangeNotVisible": "AFE नहीं दिखा? खाली छोड़ें।",
     "analogueNoticeTitle": "इस बस में सुई वाले मीटर हैं",
     "analogueNoticeBody": "मीटर की रीडिंग हाथ से दर्ज करें।"
   },

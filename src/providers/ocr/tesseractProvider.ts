@@ -48,13 +48,14 @@ interface TesseractResult {
 interface SevenSegmentPass {
   results: TesseractResult[];
   odometer: OcrWord | null;
+  afe: OcrWord | null;
 }
 
 const ENGINE_VERSION = 'tesseract.js-5';
 
 const OCR_PARAMETERS = {
   // Labels are essential context. Excluding their letters made a gauge tick
-  // such as "35" indistinguishable from a range reading and prevented "ODO"
+  // such as "35" indistinguishable from an AFE reading and prevented "ODO"
   // from helping the parser select the odometer.
   tessedit_char_whitelist: '0123456789.,%abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/ ',
   tessedit_pageseg_mode: '11',
@@ -120,15 +121,13 @@ async function readSevenSegmentOdometer(
   // crops deliberately cover only the upper-left readout where ODO is shown;
   // excluding TRIP, AFE, the clock and gauge markings prevents a plausible but
   // semantically wrong number from winning.
-  const crops = [
-    // Tight readout crop. Keeping the ODO label, divider line and gauges out
-    // of this pass matters more than applying a harsher threshold: those
-    // shapes otherwise get joined to the seven-segment digits on tilted
-    // photos.
+  const odometerCrops = [
+    // Zoomed camera image used by most phones.
+    { x: 0.16, y: 0.18, width: 0.25, height: 0.16 },
+    // Wider preview framing used by some Android/WebView cameras.
     { x: 0.3, y: 0.24, width: 0.2, height: 0.18 },
-    // A little wider/taller for cameras whose preview framing differs.
-    { x: 0.3, y: 0.21, width: 0.29, height: 0.2 },
   ];
+  const afeCrop = { x: 0.38, y: 0.3, width: 0.18, height: 0.18 };
 
   const tesseract = await import('tesseract.js');
   const langPath = new URL(`${import.meta.env.BASE_URL}tessdata`, window.location.origin).href;
@@ -147,39 +146,45 @@ async function readSevenSegmentOdometer(
       tessedit_pageseg_mode: '7',
       preserve_interword_spaces: '1',
     });
-    const prepared = await Promise.all([
-      preprocessForOcr(image, {
-        grayscale: true,
-        crop: crops[0],
-        scale: 3,
-      }),
-      preprocessForOcr(image, {
-        grayscale: true,
-        autoContrast: true,
-        crop: crops[0],
-        scale: 3,
-      }),
-      preprocessForOcr(image, {
-        grayscale: true,
-        autoContrast: true,
-        threshold: 180,
-        sharpen: true,
-        crop: crops[1],
-        scale: 3,
-      }),
+    const preparedOdometers = await Promise.all(
+      odometerCrops.flatMap((crop) => [
+        preprocessForOcr(image, { grayscale: true, crop, scale: 3 }),
+        preprocessForOcr(image, { grayscale: true, autoContrast: true, crop, scale: 3 }),
+      ]),
+    );
+    const preparedAfe = await Promise.all([
+      preprocessForOcr(image, { grayscale: true, crop: afeCrop, scale: 3 }),
+      preprocessForOcr(image, { grayscale: true, autoContrast: true, crop: afeCrop, scale: 3 }),
     ]);
-    const results: TesseractResult[] = [];
-    for (const variant of prepared) results.push(await worker.recognize(variant));
+    const odometerResults: TesseractResult[] = [];
+    for (const variant of preparedOdometers) odometerResults.push(await worker.recognize(variant));
+    const afeResults: TesseractResult[] = [];
+    for (const variant of preparedAfe) afeResults.push(await worker.recognize(variant));
     const parsed = chooseSevenSegmentOdometer(
-      results.flatMap((result) => {
+      odometerResults.flatMap((result) => {
         const reading = parseSevenSegmentOdometerWords(wordsFrom(result));
         return reading ? [reading] : [];
       }),
       previousOdometerKm,
     );
+    const afeCandidates = afeResults
+      .map((result) => result.data.text.trim())
+      .map((text) => {
+        const direct = text.match(/(\d{1,2})[.,](\d)/);
+        if (direct) return { value: Number(`${direct[1]}.${direct[2]}`), sourceText: text };
+        const digits = text.replace(/\D/g, '');
+        return digits.length === 2
+          ? { value: Number(`${digits[0]}.${digits[1]}`), sourceText: text }
+          : null;
+      })
+      .filter(
+        (candidate): candidate is { value: number; sourceText: string } =>
+          candidate != null && candidate.value > 0 && candidate.value <= 30,
+      );
+    const afe = afeCandidates[0] ?? null;
 
     return {
-      results,
+      results: [...odometerResults, ...afeResults],
       odometer: parsed
         ? {
             text: String(parsed.value),
@@ -189,6 +194,7 @@ async function readSevenSegmentOdometer(
             confidence: 0.7,
           }
         : null,
+      afe: afe ? { text: String(afe.value), confidence: 0.7 } : null,
     };
   } finally {
     await worker.terminate();
@@ -314,7 +320,7 @@ class TesseractDashboardProvider implements DashboardReadingProvider {
       }
 
       // This fleet uses a stable dashboard layout. Always run the specialist
-      // against the fixed ODO and AFE/range regions; a plausible-looking value
+      // against the fixed ODO and AFE regions; a plausible-looking value
       // from general OCR (often TRIP A) must not suppress the reliable pass.
       request.onProgress?.(0.97);
       try {
@@ -354,6 +360,14 @@ class TesseractDashboardProvider implements DashboardReadingProvider {
       passes.push(
         parseDashboardWords(
           [{ text: 'ODO', confidence: 0.5 }, sevenSegmentPass.odometer],
+          request.hints ?? {},
+        ),
+      );
+    }
+    if (sevenSegmentPass?.afe) {
+      passes.push(
+        parseDashboardWords(
+          [{ text: 'AFE', confidence: 0.5 }, sevenSegmentPass.afe],
           request.hints ?? {},
         ),
       );
