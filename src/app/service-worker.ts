@@ -4,16 +4,17 @@ import { logger } from '@/lib/logger';
 /**
  * Service worker registration.
  *
- * Static releases use an auto-update worker so a normal reload always receives
- * the latest deployed interface. Existing pages are not force-reloaded while a
- * manager is in the middle of a capture flow.
+ * Static releases use an auto-update worker. When a new worker is ready we
+ * reload once so the page cannot keep running an older JavaScript bundle after
+ * a deployment. Without the reload, an installed GitHub Pages PWA can continue
+ * showing the previous OCR flow even though the new assets are already live.
  */
 export function registerServiceWorker(): void {
   const updateSW = registerSW({
     immediate: true,
     onNeedRefresh() {
       logger.info('A new version of trck is available');
-      void updateSW(false);
+      void updateSW(true);
     },
     onOfflineReady() {
       logger.info('trck is ready to work offline');
