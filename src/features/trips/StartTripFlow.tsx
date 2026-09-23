@@ -342,6 +342,7 @@ export default function StartTripFlow() {
           }}
           onConfirm={() => void confirmCapture()}
           confirming={commit.isPending || startTrip.isPending}
+          minimumOdometerKm={selectedBus?.current_odometer_km}
         />
       )}
 

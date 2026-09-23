@@ -230,6 +230,7 @@ export default function EndTripFlow() {
           }}
           onConfirm={() => void confirmCapture()}
           confirming={commit.isPending || complete.isPending}
+          minimumOdometerKm={record.start_odometer_km}
         />
       )}
 

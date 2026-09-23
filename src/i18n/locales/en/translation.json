@@ -1002,7 +1002,7 @@
     "busAlreadyOnTrip": "That bus is already on a trip.",
     "routeNotFound": "We couldn't find that route.",
     "routeDepotMismatch": "That route belongs to a different depot.",
-    "odometerBelowLastKnown": "This is lower than the last reading ({{value}} km). Check it again.",
+    "odometerBelowLastKnown": "This bus was last saved at {{value}} km. Choose the correct bus or enter a higher reading.",
     "tripNotFound": "We couldn't find that trip.",
     "tripNotInProgress": "That trip isn't in progress any more.",
     "endReadingRequired": "Enter the final odometer reading to end this trip.",

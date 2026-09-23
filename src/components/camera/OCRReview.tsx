@@ -34,6 +34,7 @@ export function OCRReview({
   onConfirm,
   confirming,
   analogue,
+  minimumOdometerKm,
 }: {
   draft: CaptureDraft;
   onChange: (field: ReadingField, value: string) => void;
@@ -41,10 +42,16 @@ export function OCRReview({
   onConfirm: () => void;
   confirming?: boolean;
   analogue?: boolean;
+  minimumOdometerKm?: number | null;
 }) {
   const { t } = useTranslation();
   const odometer = draft.readings.find((reading) => reading.field === 'ODOMETER');
-  const canConfirm = Boolean(odometer && odometer.value.trim() !== '');
+  const odometerValue = Number.parseFloat(odometer?.value.replace(',', '.') ?? '');
+  const belowLastReading =
+    minimumOdometerKm != null &&
+    Number.isFinite(odometerValue) &&
+    odometerValue < minimumOdometerKm - 1;
+  const canConfirm = Boolean(odometer && odometer.value.trim() !== '' && !belowLastReading);
 
   return (
     <div className="space-y-4">
@@ -83,6 +90,18 @@ export function OCRReview({
           <ReadingRow key={reading.field} reading={reading} onChange={onChange} />
         ))}
       </div>
+
+      {belowLastReading && (
+        <div
+          role="alert"
+          className="flex items-start gap-2.5 rounded-xl border-2 border-warning/40 bg-warning-muted p-3"
+        >
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden />
+          <p className="text-sm font-semibold">
+            {t('errors.odometerBelowLastKnown', { value: minimumOdometerKm })}
+          </p>
+        </div>
+      )}
 
       <div className="sticky-cta flex gap-2">
         <Button type="button" variant="outline" size="lg" onClick={onRetake}>

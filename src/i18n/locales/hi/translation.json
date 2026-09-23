@@ -1002,7 +1002,7 @@
     "busAlreadyOnTrip": "यह बस पहले से ही यात्रा पर है।",
     "routeNotFound": "हम उस मार्ग को नहीं पा सकते थे।",
     "routeDepotMismatch": "यह मार्ग एक अलग डिपो से संबंधित है।",
-    "odometerBelowLastKnown": "यह पिछली रीडिंग ({{value}} km) से कम है। फिर जाँचें।",
+    "odometerBelowLastKnown": "इस बस की पिछली रीडिंग {{value}} km है। सही बस चुनें या इससे बड़ी रीडिंग डालें।",
     "tripNotFound": "हम उस यात्रा को नहीं पा सकते थे।",
     "tripNotInProgress": "यह यात्रा आगे नहीं चल रही है।",
     "endReadingRequired": "ट्रिप खत्म करने के लिए आखिरी ओडोमीटर रीडिंग डालें।",

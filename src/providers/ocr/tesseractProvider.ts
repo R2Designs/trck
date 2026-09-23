@@ -149,12 +149,43 @@ async function readSevenSegmentOdometer(
     const preparedOdometers = await Promise.all(
       odometerCrops.flatMap((crop) => [
         preprocessForOcr(image, { grayscale: true, crop, scale: 3 }),
-        preprocessForOcr(image, { grayscale: true, autoContrast: true, crop, scale: 3 }),
+        preprocessForOcr(image, {
+          grayscale: true,
+          autoContrast: true,
+          sharpen: true,
+          crop,
+          scale: 3,
+        }),
+        // Reflections flatten pale LCD digits into the background. Give the
+        // specialist model one stronger view; the candidate voting below
+        // prevents this aggressive pass from winning on an artefact alone.
+        preprocessForOcr(image, {
+          grayscale: true,
+          autoContrast: true,
+          contrast: 1.45,
+          sharpen: true,
+          crop,
+          scale: 3,
+        }),
       ]),
     );
     const preparedAfe = await Promise.all([
       preprocessForOcr(image, { grayscale: true, crop: afeCrop, scale: 3 }),
-      preprocessForOcr(image, { grayscale: true, autoContrast: true, crop: afeCrop, scale: 3 }),
+      preprocessForOcr(image, {
+        grayscale: true,
+        autoContrast: true,
+        sharpen: true,
+        crop: afeCrop,
+        scale: 3,
+      }),
+      preprocessForOcr(image, {
+        grayscale: true,
+        autoContrast: true,
+        contrast: 1.45,
+        sharpen: true,
+        crop: afeCrop,
+        scale: 3,
+      }),
     ]);
     const odometerResults: TesseractResult[] = [];
     for (const variant of preparedOdometers) odometerResults.push(await worker.recognize(variant));
@@ -181,7 +212,13 @@ async function readSevenSegmentOdometer(
         (candidate): candidate is { value: number; sourceText: string } =>
           candidate != null && candidate.value > 0 && candidate.value <= 30,
       );
-    const afe = afeCandidates[0] ?? null;
+    const afe =
+      [...afeCandidates]
+        .map((candidate) => ({
+          ...candidate,
+          votes: afeCandidates.filter((item) => item.value === candidate.value).length,
+        }))
+        .sort((a, b) => b.votes - a.votes)[0] ?? null;
 
     return {
       results: [...odometerResults, ...afeResults],
