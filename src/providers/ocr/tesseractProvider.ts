@@ -165,17 +165,18 @@ export function dashboardReadingCrops(
   return {
     odometer: uniqueCrops([
       ...(anchoredOdometer ? [anchoredOdometer] : []),
-      // Left-shifted/tilted phone capture.
-      { x: 0.12, y: 0.18, width: 0.36, height: 0.27 },
-      // Zoomed camera image.
-      { x: 0.16, y: 0.18, width: 0.25, height: 0.2 },
-      // Wider Android/WebView framing.
-      { x: 0.28, y: 0.22, width: 0.25, height: 0.22 },
+      // Tight windows deliberately avoid feeding several dashboard rows to
+      // Tesseract's single-line mode. Together they cover left-shifted,
+      // zoomed and centred phone framing.
+      { x: 0.18, y: 0.22, width: 0.25, height: 0.22 },
+      { x: 0.16, y: 0.16, width: 0.27, height: 0.22 },
+      { x: 0.27, y: 0.2, width: 0.3, height: 0.24 },
     ]),
     afe: uniqueCrops([
       ...(anchoredAfe ? [anchoredAfe] : []),
-      { x: 0.29, y: 0.3, width: 0.26, height: 0.26 },
+      { x: 0.32, y: 0.36, width: 0.18, height: 0.22 },
       { x: 0.38, y: 0.28, width: 0.2, height: 0.22 },
+      { x: 0.34, y: 0.3, width: 0.22, height: 0.24 },
     ]),
   };
 }

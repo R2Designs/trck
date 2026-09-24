@@ -68,6 +68,6 @@ describe('dashboardReadingCrops', () => {
   it('keeps overlapping fallback crops when glare hides the labels', () => {
     const crops = dashboardReadingCrops([], 1920, 1080);
     expect(crops.odometer).toHaveLength(3);
-    expect(crops.afe).toHaveLength(2);
+    expect(crops.afe).toHaveLength(3);
   });
 });
