@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Camera, Loader2 } from 'lucide-react';
+import { Camera, ImagePlus, Loader2 } from 'lucide-react';
 import type { CaptureKind } from '@domain/types.ts';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/controls';
@@ -37,6 +37,7 @@ export function DashboardScanner({
   const { t } = useTranslation();
   const camera = useCamera({ facing: 'environment' });
   const [capturing, setCapturing] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   const take = async () => {
     setCapturing(true);
@@ -45,6 +46,18 @@ export function DashboardScanner({
       if (blob) await onCapture(blob);
     } finally {
       setCapturing(false);
+    }
+  };
+
+  const choosePhoto = async (file: File | undefined) => {
+    if (!file) return;
+    setCapturing(true);
+    try {
+      await onCapture(file);
+    } finally {
+      setCapturing(false);
+      // Selecting the same photograph again must still fire a change event.
+      if (fileInput.current) fileInput.current.value = '';
     }
   };
 
@@ -86,6 +99,24 @@ export function DashboardScanner({
         >
           <Camera className="size-5" aria-hidden />
           {t('actions.takePhoto')}
+        </Button>
+        <input
+          ref={fileInput}
+          className="sr-only"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={(event) => void choosePhoto(event.target.files?.[0])}
+          disabled={processing}
+        />
+        <Button
+          variant="outline"
+          size="lg"
+          block
+          onClick={() => fileInput.current?.click()}
+          disabled={processing}
+        >
+          <ImagePlus className="size-5" aria-hidden />
+          {t('actions.choosePhoto')}
         </Button>
         <Button variant="ghost" size="lg" block onClick={onManualEntry} disabled={processing}>
           {t('actions.enterManually')}
