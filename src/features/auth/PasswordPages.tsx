@@ -10,10 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/input';
 import { ErrorState } from '@/components/feedback/states';
 import { useAuth } from './session';
-import { passwordSchema } from '@/lib/validation';
+import { emailSchema, passwordSchema } from '@/lib/validation';
 
 const requestSchema = z.object({
-  email: z.string().min(1, 'validation.required').email('validation.email'),
+  email: emailSchema,
 });
 
 function AuthPageFrame({ children }: { children: React.ReactNode }) {

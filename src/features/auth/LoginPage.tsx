@@ -13,9 +13,10 @@ import { ErrorState } from '@/components/feedback/states';
 import { useAuth } from './session';
 import { changeLanguage } from '@/i18n';
 import { toAppError } from '@/lib/errors';
+import { emailSchema } from '@/lib/validation';
 
 const schema = z.object({
-  email: z.string().min(1, 'validation.required').email('validation.email'),
+  email: emailSchema,
   password: z.string().min(1, 'validation.required'),
 });
 
@@ -163,7 +164,6 @@ export function LoginPage() {
             </Link>
           </div>
         </form>
-
       </main>
     </div>
   );

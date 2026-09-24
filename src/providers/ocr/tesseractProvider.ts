@@ -83,16 +83,27 @@ function hasRepeatedValue(values: readonly number[]): boolean {
   return values.some((value, index) => values.indexOf(value) !== index);
 }
 
-function afeCandidate(result: TesseractResult): { value: number; sourceText: string } | null {
-  const text = result.data.text.trim();
+export function parseSevenSegmentAfeText(textInput: string): number | null {
+  const text = textInput.trim();
   const direct = text.match(/(\d{1,2})[.,](\d)/);
   const value = direct
     ? Number(`${direct[1]}.${direct[2]}`)
     : (() => {
         const digits = text.replace(/\D/g, '');
-        return digits.length === 2 ? Number(`${digits[0]}.${digits[1]}`) : Number.NaN;
+        // The seven-segment language sometimes turns the trailing slash from
+        // `km/l` into a final 7 (for example `6.2 km/l` -> `627`). The first
+        // two digits still carry the complete one-decimal AFE value.
+        return digits.length === 2 || digits.length === 3
+          ? Number(`${digits[0]}.${digits[1]}`)
+          : Number.NaN;
       })();
-  return Number.isFinite(value) && value > 0 && value <= 30 ? { value, sourceText: text } : null;
+  return Number.isFinite(value) && value > 0 && value <= 30 ? value : null;
+}
+
+function afeCandidate(result: TesseractResult): { value: number; sourceText: string } | null {
+  const text = result.data.text.trim();
+  const value = parseSevenSegmentAfeText(text);
+  return value == null ? null : { value, sourceText: text };
 }
 
 function clampCrop(crop: FractionalCrop): FractionalCrop {
@@ -165,6 +176,9 @@ export function dashboardReadingCrops(
   return {
     odometer: uniqueCrops([
       ...(anchoredOdometer ? [anchoredOdometer] : []),
+      // Value-only windows. Single-line OCR becomes confused when the ODO
+      // label, divider and digits share a crop, especially under reflection.
+      { x: 0.2, y: 0.26, width: 0.23, height: 0.15 },
       // Tight windows deliberately avoid feeding several dashboard rows to
       // Tesseract's single-line mode. Together they cover left-shifted,
       // zoomed and centred phone framing.
@@ -174,6 +188,8 @@ export function dashboardReadingCrops(
     ]),
     afe: uniqueCrops([
       ...(anchoredAfe ? [anchoredAfe] : []),
+      { x: 0.36, y: 0.42, width: 0.105, height: 0.13 },
+      { x: 0.42, y: 0.33, width: 0.13, height: 0.16 },
       { x: 0.32, y: 0.36, width: 0.18, height: 0.22 },
       { x: 0.38, y: 0.28, width: 0.2, height: 0.22 },
       { x: 0.34, y: 0.3, width: 0.22, height: 0.24 },
@@ -199,6 +215,19 @@ async function prepareCropVariants(image: Blob, crop: FractionalCrop): Promise<B
       crop,
       scale: 3,
     }),
+    // Seven-segment LCDs are strokes, not print. Binary views suppress dust,
+    // reflections and the dashboard bezel that otherwise dominate Tesseract.
+    ...[110, 150, 190].map((threshold) =>
+      preprocessForOcr(image, {
+        grayscale: true,
+        autoContrast: true,
+        contrast: 1.35,
+        sharpen: true,
+        threshold,
+        crop,
+        scale: 3,
+      }),
+    ),
     // Hand-held captures commonly lean in either direction. Deskew just the
     // compact readout rather than rotating the full photograph.
     preprocessForOcr(image, {
@@ -288,40 +317,56 @@ async function readSevenSegmentOdometer(
       tessedit_pageseg_mode: '7',
       preserve_interword_spaces: '1',
     });
-    const preparedOdometers = (
-      await Promise.all(crops.odometer.map((crop) => prepareCropVariants(image, crop)))
-    ).flat();
-    const preparedAfe = (
-      await Promise.all(crops.afe.map((crop) => prepareCropVariants(image, crop)))
-    ).flat();
-    const odometerResults: TesseractResult[] = [];
+    const preparedOdometers = await Promise.all(
+      crops.odometer.map((crop) => prepareCropVariants(image, crop)),
+    );
+    const odometerResults: Array<{ result: TesseractResult; crop: FractionalCrop }> = [];
     const odometerValues: number[] = [];
-    for (const variant of preparedOdometers) {
-      const result = await worker.recognize(variant);
-      odometerResults.push(result);
-      const reading = parseSevenSegmentOdometerWords(wordsFrom(result));
-      if (reading) odometerValues.push(reading.value);
-      // Two independent preprocessing passes agreeing is stronger evidence
-      // than continuing through every fallback crop, and keeps good captures
-      // responsive on inexpensive Android phones.
-      if (hasRepeatedValue(odometerValues)) break;
-    }
-    const afeResults: TesseractResult[] = [];
-    const afeValues: number[] = [];
-    for (const variant of preparedAfe) {
-      const result = await worker.recognize(variant);
-      afeResults.push(result);
-      const reading = afeCandidate(result);
-      if (reading) afeValues.push(reading.value);
-      if (hasRepeatedValue(afeValues)) break;
+    odometerLoop: for (let cropIndex = 0; cropIndex < preparedOdometers.length; cropIndex += 1) {
+      for (const variant of preparedOdometers[cropIndex] ?? []) {
+        const result = await worker.recognize(variant);
+        odometerResults.push({ result, crop: crops.odometer[cropIndex] as FractionalCrop });
+        const reading = parseSevenSegmentOdometerWords(wordsFrom(result));
+        if (reading) odometerValues.push(reading.value);
+        // Two independent preprocessing passes agreeing is stronger evidence
+        // than continuing through every fallback crop, and keeps good captures
+        // responsive on inexpensive Android phones.
+        if (hasRepeatedValue(odometerValues)) break odometerLoop;
+      }
     }
     const parsed = chooseSevenSegmentOdometer(
-      odometerResults.flatMap((result) => {
+      odometerResults.flatMap(({ result }) => {
         const reading = parseSevenSegmentOdometerWords(wordsFrom(result));
         return reading ? [reading] : [];
       }),
       previousOdometerKm,
     );
+    const winningOdometerCrop = parsed
+      ? odometerResults.find(({ result }) => {
+          const reading = parseSevenSegmentOdometerWords(wordsFrom(result));
+          return reading?.value === parsed.value;
+        })?.crop
+      : null;
+
+    // A wide photo places the display higher than a close portrait-style
+    // capture. The odometer crop that succeeded tells us which AFE layout to
+    // try first, preventing a crop from another layout from winning by noise.
+    const afeCrops = [...crops.afe];
+    if (winningOdometerCrop && winningOdometerCrop.y < 0.22 && afeCrops.length >= 2) {
+      [afeCrops[0], afeCrops[1]] = [afeCrops[1] as FractionalCrop, afeCrops[0] as FractionalCrop];
+    }
+    const preparedAfe = await Promise.all(afeCrops.map((crop) => prepareCropVariants(image, crop)));
+    const afeResults: TesseractResult[] = [];
+    const afeValues: number[] = [];
+    afeLoop: for (const variants of preparedAfe) {
+      for (const variant of variants) {
+        const result = await worker.recognize(variant);
+        afeResults.push(result);
+        const reading = afeCandidate(result);
+        if (reading) afeValues.push(reading.value);
+        if (hasRepeatedValue(afeValues)) break afeLoop;
+      }
+    }
     const afeCandidates = afeResults
       .map(afeCandidate)
       .filter((candidate): candidate is { value: number; sourceText: string } => candidate != null);
@@ -331,10 +376,11 @@ async function readSevenSegmentOdometer(
           ...candidate,
           votes: afeCandidates.filter((item) => item.value === candidate.value).length,
         }))
-        .sort((a, b) => b.votes - a.votes)[0] ?? null;
+        .sort((a, b) => b.votes - a.votes)
+        .find((candidate) => candidate.votes >= 2) ?? null;
 
     return {
-      results: [...odometerResults, ...afeResults],
+      results: [...odometerResults.map(({ result }) => result), ...afeResults],
       odometer: parsed
         ? {
             text: String(parsed.value),

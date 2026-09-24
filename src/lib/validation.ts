@@ -48,7 +48,12 @@ export const optionalNumeric = (options: Parameters<typeof numeric>[0] = {}) =>
     .union([z.literal(''), z.null(), z.undefined(), numeric(options)])
     .transform((value) => (value === '' || value == null ? null : (value as number)));
 
-export const emailSchema = required().email('validation.email').toLowerCase();
+// The fleet can use short internal domains such as `manager@trck`. Zod's
+// built-in email validator requires a public-domain shape, which blocked the
+// accounts the organisation actually provisions.
+export const emailSchema = required()
+  .refine((value) => /^[^\s@]+@[^\s@]+$/.test(value), 'validation.email')
+  .transform((value) => value.toLowerCase());
 
 export const passwordSchema = z
   .string()
