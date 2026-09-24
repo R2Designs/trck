@@ -181,6 +181,47 @@ export function dashboardReadingCrops(
   };
 }
 
+async function prepareCropVariants(image: Blob, crop: FractionalCrop): Promise<Blob[]> {
+  return Promise.all([
+    preprocessForOcr(image, { grayscale: true, crop, scale: 3 }),
+    preprocessForOcr(image, {
+      grayscale: true,
+      autoContrast: true,
+      sharpen: true,
+      crop,
+      scale: 3,
+    }),
+    preprocessForOcr(image, {
+      grayscale: true,
+      autoContrast: true,
+      contrast: 1.45,
+      sharpen: true,
+      crop,
+      scale: 3,
+    }),
+    // Hand-held captures commonly lean in either direction. Deskew just the
+    // compact readout rather than rotating the full photograph.
+    preprocessForOcr(image, {
+      grayscale: true,
+      autoContrast: true,
+      contrast: 1.45,
+      sharpen: true,
+      rotateDegrees: -7,
+      crop,
+      scale: 3,
+    }),
+    preprocessForOcr(image, {
+      grayscale: true,
+      autoContrast: true,
+      contrast: 1.45,
+      sharpen: true,
+      rotateDegrees: 7,
+      crop,
+      scale: 3,
+    }),
+  ]);
+}
+
 export function chooseSevenSegmentOdometer(
   candidates: ReadonlyArray<{ value: number; sourceText: string }>,
   previousOdometerKm?: number | null,
@@ -247,49 +288,12 @@ async function readSevenSegmentOdometer(
       tessedit_pageseg_mode: '7',
       preserve_interword_spaces: '1',
     });
-    const preparedOdometers = await Promise.all(
-      crops.odometer.flatMap((crop) => [
-        preprocessForOcr(image, { grayscale: true, crop, scale: 3 }),
-        preprocessForOcr(image, {
-          grayscale: true,
-          autoContrast: true,
-          sharpen: true,
-          crop,
-          scale: 3,
-        }),
-        // Reflections flatten pale LCD digits into the background. Give the
-        // specialist model one stronger view; the candidate voting below
-        // prevents this aggressive pass from winning on an artefact alone.
-        preprocessForOcr(image, {
-          grayscale: true,
-          autoContrast: true,
-          contrast: 1.45,
-          sharpen: true,
-          crop,
-          scale: 3,
-        }),
-      ]),
-    );
-    const preparedAfe = await Promise.all(
-      crops.afe.flatMap((crop) => [
-        preprocessForOcr(image, { grayscale: true, crop, scale: 3 }),
-        preprocessForOcr(image, {
-          grayscale: true,
-          autoContrast: true,
-          sharpen: true,
-          crop,
-          scale: 3,
-        }),
-        preprocessForOcr(image, {
-          grayscale: true,
-          autoContrast: true,
-          contrast: 1.45,
-          sharpen: true,
-          crop,
-          scale: 3,
-        }),
-      ]),
-    );
+    const preparedOdometers = (
+      await Promise.all(crops.odometer.map((crop) => prepareCropVariants(image, crop)))
+    ).flat();
+    const preparedAfe = (
+      await Promise.all(crops.afe.map((crop) => prepareCropVariants(image, crop)))
+    ).flat();
     const odometerResults: TesseractResult[] = [];
     const odometerValues: number[] = [];
     for (const variant of preparedOdometers) {
