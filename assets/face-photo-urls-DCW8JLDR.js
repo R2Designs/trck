@@ -1,0 +1,2 @@
+import{r as a}from"./vendor-react-BD3S5F4e.js";import{g as p}from"./index-BlgUICW2.js";function i(s){const t=a.useMemo(()=>s.map(e=>e.storage_path),[s]),[n,r]=a.useState(new Map);return a.useEffect(()=>{if(t.length===0){r(new Map);return}let e=!1;return p().getSignedUrls("faces",t,300).then(o=>{e||r(new Map([...o].map(([u,c])=>[u,c.url])))}).catch(()=>{e||r(new Map)}),()=>{e=!0}},[t]),n}export{i as u};
+//# sourceMappingURL=face-photo-urls-DCW8JLDR.js.map
